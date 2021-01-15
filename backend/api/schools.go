@@ -1,7 +1,7 @@
 package api
 
 import (
-	m "classwork/models"
+	m "classwork/backend/models"
 
 	"encoding/json"
 

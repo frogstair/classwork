@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 
-	m "classwork/models"
+	m "classwork/backend/models"
 )
 
 // Register is used to register a new user

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"classwork/util"
+	"classwork/backend/util"
 	"log"
 
 	"github.com/jinzhu/gorm"

@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 
-	m "classwork/models"
+	m "classwork/backend/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

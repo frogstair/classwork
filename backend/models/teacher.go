@@ -1,7 +1,7 @@
 package models
 
 import (
-	"classwork/util"
+	"classwork/backend/util"
 	"log"
 
 	"github.com/jinzhu/gorm"
@@ -130,10 +130,58 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 
 // DeleteTeacher is a model to delete a teacher from a database
 type DeleteTeacher struct {
-	ID string
+	UserID   string `json:"id"`
+	SchoolID string `json:"school_id"`
+}
+
+func (d *DeleteTeacher) clean() {
+	util.RemoveSpaces(&d.SchoolID)
+	util.RemoveSpaces(&d.UserID)
 }
 
 // Delete deletes a teacher
-func (d *DeleteTeacher) Delete() {
+func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *Response) {
+	resp := new(Response)
 
+	d.clean()
+
+	user := new(User)
+	err := db.Where("id = ?", d.UserID).First(user).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Teacher not found"
+			return 404, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	school := new(School)
+	err = db.Where("id = ?", d.SchoolID).First(school).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Teacher not found"
+			return 404, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	db.Model(school).Association("Teachers").Delete(user)
+	user.Perms ^= Teacher
+
+	if user.Perms == 0 {
+		return user.Delete(db)
+	}
+
+	resp.Data = true
+	resp.Error = ""
+
+	return 200, resp
 }

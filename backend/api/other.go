@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 
-	m "classwork/models"
+	m "classwork/backend/models"
 )
 
 // EmailValid checks if the supplied Email is valid

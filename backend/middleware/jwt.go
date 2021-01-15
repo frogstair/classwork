@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	m "classwork/models"
-	"classwork/util"
+	m "classwork/backend/models"
+	"classwork/backend/util"
 	"log"
 	"os"
 
