@@ -1,6 +1,9 @@
 package util
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 // ValidateName tells if a name is valid or not
 func ValidateName(name string) bool {
@@ -15,12 +18,14 @@ func ValidateEmail(email string) bool {
 
 // Clean removes duplicate whitespace and illegal characters
 func Clean(text *string) {
-	reg := regexp.MustCompile(`(\s{2,})|([^a-zA-Z1-9])`)
-	*text = reg.ReplaceAllString(*text, "")
+	RemoveSpaces(text)
+	reg := regexp.MustCompile(`([^a-zA-Z1-9])`)
+	*text = reg.ReplaceAllString(*text, " ")
 }
 
-// PassClean removes duplicate whitespace for passwords
-func PassClean(password *string) {
-	reg := regexp.MustCompile(`(\s{2,})`)
+// RemoveSpaces removes duplicate and leading/trailing spaces from a string
+func RemoveSpaces(password *string) {
+	*password = strings.TrimSpace(*password)
+	reg := regexp.MustCompile(`\s`)
 	*password = reg.ReplaceAllString(*password, "")
 }

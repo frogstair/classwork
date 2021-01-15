@@ -44,3 +44,21 @@ func Login(c *gin.Context) {
 	code, data := loginuser.Login(db)
 	c.JSON(code, data)
 }
+
+// PasswordCreate is used to create a new password for a user
+func PasswordCreate(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	passCreate := new(m.PasswordCreate)
+	err := json.NewDecoder(c.Request.Body).Decode(passCreate)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid data"})
+	}
+
+	code, data := passCreate.Create(db)
+	c.JSON(code, data)
+}

@@ -8,13 +8,15 @@ import (
 )
 
 // Role is a type alias for a role a user can have
-type Role string
+type Role int
+
+var tokenValidity = int64(2592000)
 
 // Role list
 const (
-	Headmaster Role = "h"
-	Teacher    Role = "t"
-	Student    Role = "s"
+	Headmaster Role = 1 << iota
+	Teacher
+	Student
 )
 
 // Token is the model for a JWT token with custom claims
@@ -28,7 +30,7 @@ func CreateToken(id string) string {
 	token := new(Token)
 
 	token.ID = id
-	token.ExpiresAt = time.Now().Unix() + 2592000
+	token.ExpiresAt = time.Now().Unix() + tokenValidity
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS512, token)
 	tokenString, _ := jwtToken.SignedString([]byte(os.Getenv("JWT_SECRET")))

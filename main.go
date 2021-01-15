@@ -32,10 +32,15 @@ func main() {
 
 	apiGroup := g.Group("/api")
 
+	logGroup := apiGroup.Group("/login")
+	logGroup.POST("/", api.Login)
+	logGroup.POST("/new", api.PasswordCreate)
+
 	regGroup := apiGroup.Group("/register")
 	regGroup.POST("/", api.Register)
 
-	apiGroup.POST("/login", api.Login)
+	headmasterGroup := apiGroup.Group("/headmaster")
+	_ = headmasterGroup
 
 	g.Run(os.Getenv("ADDRESS") + ":" + os.Getenv("PORT"))
 }
