@@ -44,28 +44,26 @@ func Login(c *gin.Context) {
 	}
 
 	code, data, tok := loginuser.Login(db)
-	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, false)
+	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, true)
 
 	c.JSON(code, data)
 }
 
-// PasswordCreate is used to create a new password for a user
-func PasswordCreate(c *gin.Context) {
+// GenerateOTC creates an OTC for a user if their password is not set
+func GenerateOTC(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no database variable in context")
 	}
 
-	passCreate := new(m.PasswordCreate)
-	err := json.NewDecoder(c.Request.Body).Decode(passCreate)
+	hasPass := new(m.OTCCreate)
+	err := json.NewDecoder(c.Request.Body).Decode(hasPass)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, data, tok := passCreate.Create(db)
-	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, false)
-
-	c.JSON(code, data)
+	code, resp := hasPass.Create(db)
+	c.JSON(code, resp)
 }

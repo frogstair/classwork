@@ -10,9 +10,9 @@ import (
 
 // School is the internal representation of the schools
 type School struct {
-	ID     string `gorm:"primaryKey"`
-	UserID string `gorm:"not null"`
-	Name   string `gorm:"not null"`
+	ID     string `gorm:"primaryKey" json:"id"`
+	UserID string `gorm:"not null" json:"-"`
+	Name   string `gorm:"not null" json:"name"`
 }
 
 // NewSchool is the model to add a new school
@@ -99,6 +99,14 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
 		resp.Data = nil
 		resp.Error = "user does not own school"
 		return 403, resp
+	}
+
+	err = db.Delete(school).Error
+	if err != nil {
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
 	}
 
 	resp.Data = true

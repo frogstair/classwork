@@ -22,7 +22,7 @@ func AddSchool(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	if user.Has(m.Headmaster) {
+	if !user.Has(m.Headmaster) {
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
@@ -52,7 +52,7 @@ func DeleteSchool(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	if user.Has(m.Headmaster) {
+	if !user.Has(m.Headmaster) {
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}

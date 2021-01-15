@@ -89,11 +89,13 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
 type LoginUser struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Code     string `json:"code"`
 }
 
 func (l *LoginUser) clean() {
 	util.RemoveSpaces(&l.Email)
 	util.RemoveSpaces(&l.Password)
+	util.RemoveSpaces(&l.Code)
 }
 
 // Login will generate a token for the user
@@ -115,88 +117,25 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
 		return 500, resp, ""
 	}
 
-	type loginResponse struct {
-		LoggedIn  *bool  `json:"logged_in"`
-		OTC       string `json:"otc,omitempty"`
-		Token     string `json:"token,omitempty"`
-		ExpiresIn *int64 `json:"expires_in,omitempty"`
-	}
-
-	loginResp := loginResponse{}
-
 	if user.PassSet {
 		if !util.Compare(user.Password, l.Password) {
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
 			return 500, resp, ""
 		}
-
-		user.Token = CreateToken(user.ID)
-		err = db.Save(user).Error
-		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp, ""
-		}
-
-		loginResp = loginResponse{&user.PassSet, "", user.Token, &TokenValidity}
 	} else {
-		onetimecode := util.RandomCode()
-
-		user.OneTimeCode = onetimecode
-		err := db.Save(user).Error
-		if err != nil {
+		if l.Code == user.OneTimeCode {
+			user.PassSet = true
+			user.Password = util.Hash(l.Password)
+			user.OneTimeCode = ""
+		} else {
 			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp, ""
-		}
-
-		loginResp = loginResponse{&user.PassSet, onetimecode, "", nil}
-	}
-
-	resp.Data = loginResp
-	resp.Error = ""
-
-	return 200, resp, user.Token
-}
-
-// PasswordCreate is the struct to create a new password for a user
-type PasswordCreate struct {
-	Password    string
-	OneTimeCode string
-}
-
-func (p *PasswordCreate) clean() {
-	util.RemoveSpaces(&p.Password)
-	util.RemoveSpaces(&p.OneTimeCode)
-}
-
-// Create creates a password for a given email
-func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response, string) {
-	resp := new(Response)
-
-	p.clean()
-
-	user := new(User)
-	err := db.Where("onetimecode = ?", p.OneTimeCode).First(user).Error
-	if err != nil {
-		if util.IsNotFoundErr(err) {
-			resp.Data = nil
-			resp.Error = "Invalid code"
+			resp.Error = "Invatid OTC"
 			return 401, resp, ""
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp, ""
 	}
 
-	hashed := util.Hash(p.Password)
-	user.Password = hashed
-	user.OneTimeCode = ""
-	user.PassSet = true
+	user.Token = CreateToken(user.ID)
 	err = db.Save(user).Error
 	if err != nil {
 		resp.Data = nil
@@ -205,9 +144,71 @@ func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response, string) {
 		return 500, resp, ""
 	}
 
-	l := new(LoginUser)
-	l.Email = user.Email
-	l.Password = p.Password
+	loginResponse := struct {
+		Token     string `json:"token"`
+		ExpiresIn int64  `json:"expires_in"`
+	}{user.Token, TokenValidity}
 
-	return l.Login(db)
+	resp.Data = loginResponse
+	resp.Error = ""
+
+	return 200, resp, user.Token
+}
+
+// OTCCreate is the struct to check is a user has a password
+type OTCCreate struct {
+	Email string
+	ID    string
+}
+
+func (o *OTCCreate) clean() {
+	util.RemoveSpaces(&o.Email)
+	util.RemoveSpaces(&o.ID)
+}
+
+// Create creates an OTC for the user
+func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
+	resp := new(Response)
+	user := new(User)
+
+	err := db.Where("email = ?", o.Email).First(user).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Invalid user"
+			return 403, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	if user.ID != o.ID {
+		resp.Data = nil
+		resp.Error = "Invalid user"
+		return 403, resp
+	}
+
+	if user.PassSet {
+		resp.Data = nil
+		resp.Error = "not found"
+		return 404, resp
+	}
+
+	onetimecode := util.RandomCode()
+
+	user.OneTimeCode = onetimecode
+	err = db.Save(user).Error
+	if err != nil {
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	resp.Data = onetimecode
+	resp.Error = ""
+
+	return 200, resp
 }

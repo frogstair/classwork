@@ -33,7 +33,7 @@ func main() {
 
 	logGroup := apiGroup.Group("/login")
 	logGroup.POST("/", api.Login)
-	logGroup.POST("/new", api.PasswordCreate)
+	logGroup.GET("/pass", api.GenerateOTC)
 
 	regGroup := apiGroup.Group("/register")
 	regGroup.POST("/", api.Register)
@@ -44,6 +44,7 @@ func main() {
 
 	schGroup := apiGroup.Group("/school")
 	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
+	schGroup.DELETE("/", m.ValidateJWT, api.DeleteSchool)
 
 	g.Run(os.Getenv("ADDRESS") + ":" + os.Getenv("PORT"))
 }

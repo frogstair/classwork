@@ -21,7 +21,6 @@ func GetDashboard(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	c.JSON(200, user)
-
-	_ = db
+	code, resp := user.GetDashboard(db)
+	c.JSON(code, resp)
 }
