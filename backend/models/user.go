@@ -8,15 +8,15 @@ import (
 
 // User is the internal representation of a user
 type User struct {
-	ID          string `gorm:"primaryKey"`
-	FirstName   string `gorm:"not null"`
-	LastName    string `gorm:"not null"`
-	Email       string `gorm:"not null;unique"`
-	Password    string
-	Token       string `gorm:"unique"`
-	Perms       Role   `gorm:"not null"`
-	PassSet     bool
-	OneTimeCode string
+	ID          string `gorm:"primaryKey" json:"id"`
+	FirstName   string `gorm:"not null" json:"first_name"`
+	LastName    string `gorm:"not null" json:"last_name"`
+	Email       string `gorm:"not null;unique" json:"email"`
+	Password    string `json:"-"`
+	Token       string `gorm:"unique" json:"-"`
+	Perms       Role   `gorm:"not null" json:"-"`
+	PassSet     bool   `json:"-"`
+	OneTimeCode string `json:"-"`
 }
 
 // Has returns if a user has a role
