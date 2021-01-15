@@ -45,6 +45,7 @@ func main() {
 	schGroup := apiGroup.Group("/school")
 	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
 	schGroup.DELETE("/", m.ValidateJWT, api.DeleteSchool)
+	schGroup.POST("/teacher", m.ValidateJWT, api.AddTeacher)
 
 	g.Run(os.Getenv("ADDRESS") + ":" + os.Getenv("PORT"))
 }

@@ -16,7 +16,7 @@ type User struct {
 	Token       string `gorm:"unique"`
 	Perms       Role   `gorm:"not null"`
 	PassSet     bool
-	OneTimeCode string `gorm:"unique"`
+	OneTimeCode string
 }
 
 // Has returns if a user has a role

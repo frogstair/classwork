@@ -74,9 +74,9 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
 	}
 
 	userResponse := struct {
-		FirstName string
-		LastName  string
-		ID        string
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		ID        string `json:"id"`
 	}{user.FirstName, user.LastName, user.ID}
 
 	resp.Data = userResponse

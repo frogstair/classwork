@@ -10,9 +10,11 @@ import (
 
 // School is the internal representation of the schools
 type School struct {
-	ID     string `gorm:"primaryKey" json:"id"`
-	UserID string `gorm:"not null" json:"-"`
-	Name   string `gorm:"not null" json:"name"`
+	ID       string  `gorm:"primaryKey" json:"id"`
+	UserID   string  `gorm:"not null" json:"-"`
+	Name     string  `gorm:"not null" json:"name"`
+	Students []*User `gorm:"many2many:students"`
+	Teachers []*User `gorm:"many2many:teachers"`
 }
 
 // NewSchool is the model to add a new school
