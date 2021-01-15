@@ -158,12 +158,10 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
 // OTCCreate is the struct to check is a user has a password
 type OTCCreate struct {
 	Email string
-	ID    string
 }
 
 func (o *OTCCreate) clean() {
 	util.RemoveSpaces(&o.Email)
-	util.RemoveSpaces(&o.ID)
 }
 
 // Create creates an OTC for the user
@@ -182,12 +180,6 @@ func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
 		resp.Error = "Internal error"
 		log.Printf("Database error: %s\n", err.Error())
 		return 500, resp
-	}
-
-	if user.ID != o.ID {
-		resp.Data = nil
-		resp.Error = "Invalid user"
-		return 403, resp
 	}
 
 	if user.PassSet {
