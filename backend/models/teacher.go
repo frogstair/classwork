@@ -115,6 +115,16 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 			log.Printf("Database error: %s\n", err.Error())
 			return 500, resp
 		}
+
+		school.Teachers = append(school.Teachers, user)
+
+		err = db.Save(school).Error
+		if err != nil {
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
+		}
 	}
 
 	newTeacherResponse := struct {
