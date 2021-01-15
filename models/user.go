@@ -15,7 +15,8 @@ type User struct {
 	OneTimeCode string `gorm:"unique"`
 }
 
-func (u *User) has(r Role) bool {
+// Has returns if a user has a role
+func (u *User) Has(r Role) bool {
 	return u.Perms&r == 1
 }
 

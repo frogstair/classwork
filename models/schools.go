@@ -17,7 +17,7 @@ type School struct {
 
 // NewSchool is the model to add a new school
 type NewSchool struct {
-	Name string
+	Name string `json:"name"`
 }
 
 func (n *NewSchool) clean() {
@@ -64,5 +64,45 @@ func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *Response) {
 
 	resp.Data = schoolResp
 	resp.Error = ""
+	return 200, resp
+}
+
+// DeleteSchool deletes a school
+type DeleteSchool struct {
+	ID string `json:"id"`
+}
+
+func (d *DeleteSchool) clean() {
+	util.RemoveSpaces(&d.ID)
+}
+
+// Delete will delete a school
+func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
+	resp := new(Response)
+	d.clean()
+	school := new(School)
+
+	err := db.Where("id = ?", d.ID).First(school).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Invalid school ID"
+			return 400, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	if school.UserID != user.ID {
+		resp.Data = nil
+		resp.Error = "user does not own school"
+		return 403, resp
+	}
+
+	resp.Data = true
+	resp.Error = ""
+
 	return 200, resp
 }
