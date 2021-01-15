@@ -38,3 +38,33 @@ func AddStudent(c *gin.Context) {
 	code, resp := newStudent.Add(db)
 	c.JSON(code, resp)
 }
+
+// DeleteStudent adds a new student
+func DeleteStudent(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	user, ok := c.Keys["usr"].(*m.User)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no user variable in context")
+	}
+
+	if !user.Has(m.Headmaster) {
+		c.JSON(403, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
+	deleteStudent := new(m.DeleteStudent)
+	err := json.NewDecoder(c.Request.Body).Decode(deleteStudent)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid data"})
+		return
+	}
+
+	code, resp := deleteStudent.Delete(db)
+	c.JSON(code, resp)
+}

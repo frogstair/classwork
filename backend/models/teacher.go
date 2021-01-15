@@ -174,7 +174,7 @@ func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *Response) {
 	}
 
 	db.Model(school).Association("Teachers").Delete(user)
-	user.Perms ^= Teacher
+	user.Perms &^= Teacher
 
 	if user.Perms == 0 {
 		return user.Delete(db)

@@ -58,6 +58,13 @@ func DeleteTeacher(c *gin.Context) {
 		return
 	}
 
-	_ = db
+	deleteTeacher := new(m.DeleteTeacher)
+	err := json.NewDecoder(c.Request.Body).Decode(deleteTeacher)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid data"})
+		return
+	}
 
+	code, resp := deleteTeacher.Delete(db)
+	c.JSON(code, resp)
 }
