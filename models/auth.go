@@ -58,6 +58,7 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
 	user.LastName = r.LastName
 	user.Password = hashed
 	user.Perms = Headmaster
+	user.PassSet = true
 
 	err := db.Create(user).Error
 	if err != nil {

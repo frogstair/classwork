@@ -6,7 +6,7 @@ import (
 
 	"classwork/api"
 	"classwork/database"
-	"classwork/middleware"
+	m "classwork/middleware"
 	"classwork/pages"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.New()
 	g.Use(gin.Recovery())
-	g.Use(middleware.Postgres)
+	g.Use(m.Postgres)
 	g.NoRoute(pages.NotFound)
 	g.NoMethod(pages.NoMethod)
 
@@ -39,8 +39,11 @@ func main() {
 	regGroup.POST("/", api.Register)
 	regGroup.GET("/email", api.EmailValid)
 
-	headmasterGroup := apiGroup.Group("/headmaster")
-	_ = headmasterGroup
+	dashboardGroup := apiGroup.Group("/dashboard")
+	dashboardGroup.GET("/", m.ValidateJWT, api.GetDashboard)
+
+	schGroup := apiGroup.Group("/school")
+	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
 
 	g.Run(os.Getenv("ADDRESS") + ":" + os.Getenv("PORT"))
 }

@@ -22,8 +22,12 @@ func (e *Email) clean() {
 	util.RemoveSpaces(&e.Email)
 }
 
-func (e *Email) valid() bool {
-	return util.ValidateEmail(e.Email)
+func (e *Email) validate() (bool, string) {
+	valid := util.ValidateEmail(e.Email)
+	if valid {
+		return valid, ""
+	}
+	return valid, "Invalid email"
 }
 
 // Valid returns if the email is valid
@@ -32,10 +36,12 @@ func (e *Email) Valid(db *gorm.DB) (int, *Response) {
 	e.clean()
 	user := new(User)
 
-	if !e.valid() {
-		resp.Data = false
-		resp.Error = ""
-		return 200, resp
+	valid, reason := e.validate()
+
+	if !valid {
+		resp.Data = nil
+		resp.Error = reason
+		return 400, resp
 	}
 
 	err := db.Where("email = ?", e.Email).First(user).Error

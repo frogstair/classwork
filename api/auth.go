@@ -21,6 +21,7 @@ func Register(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(reguser)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
+		return
 	}
 
 	code, data := reguser.Register(db)
@@ -39,6 +40,7 @@ func Login(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(loginuser)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
+		return
 	}
 
 	code, data, tok := loginuser.Login(db)
@@ -59,6 +61,7 @@ func PasswordCreate(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(passCreate)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
+		return
 	}
 
 	code, data, tok := passCreate.Create(db)

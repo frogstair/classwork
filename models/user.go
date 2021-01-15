@@ -1,5 +1,7 @@
 package models
 
+import "github.com/jinzhu/gorm"
+
 // User is the internal representation of a user
 type User struct {
 	ID          string `gorm:"primaryKey"`
@@ -11,4 +13,20 @@ type User struct {
 	Perms       Role   `gorm:"not null"`
 	PassSet     bool
 	OneTimeCode string `gorm:"unique"`
+}
+
+func (u *User) has(r Role) bool {
+	return u.Perms&r == 1
+}
+
+// GetDashboard gets the users dashboard
+func (u *User) GetDashboard(db *gorm.DB) (int, *Response) {
+	resp := new(Response)
+
+	dashboard := new(Dashboard)
+
+	resp.Data = dashboard
+	resp.Error = ""
+
+	return 200, resp
 }
