@@ -27,8 +27,7 @@ func main() {
 	g.Use(gin.Recovery())
 	g.Use(middleware.Postgres)
 	g.NoRoute(pages.NotFound)
-
-	g.GET("/:fname", pages.Serve)
+	g.NoMethod(pages.NoMethod)
 
 	apiGroup := g.Group("/api")
 
@@ -38,6 +37,7 @@ func main() {
 
 	regGroup := apiGroup.Group("/register")
 	regGroup.POST("/", api.Register)
+	regGroup.GET("/email", api.EmailValid)
 
 	headmasterGroup := apiGroup.Group("/headmaster")
 	_ = headmasterGroup

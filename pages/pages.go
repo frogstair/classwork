@@ -35,3 +35,8 @@ func Serve(c *gin.Context) {
 func NotFound(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "not found"})
 }
+
+// NoMethod is thrown when no method is allowed
+func NoMethod(c *gin.Context) {
+	c.JSON(405, gin.H{"error": "method not allowed"})
+}
