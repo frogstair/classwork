@@ -41,7 +41,9 @@ func Login(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid data"})
 	}
 
-	code, data := loginuser.Login(db)
+	code, data, tok := loginuser.Login(db)
+	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, false)
+
 	c.JSON(code, data)
 }
 
@@ -59,6 +61,8 @@ func PasswordCreate(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid data"})
 	}
 
-	code, data := passCreate.Create(db)
+	code, data, tok := passCreate.Create(db)
+	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, false)
+
 	c.JSON(code, data)
 }

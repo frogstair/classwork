@@ -96,7 +96,7 @@ func (l *LoginUser) clean() {
 }
 
 // Login will generate a token for the user
-func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
+func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
 	resp := new(Response)
 	l.clean()
 
@@ -106,12 +106,12 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
 		if util.IsNotFoundErr(err) {
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
-			return 401, resp
+			return 401, resp, ""
 		}
 		resp.Data = nil
 		resp.Error = "Internal error"
 		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return 500, resp, ""
 	}
 
 	type loginResponse struct {
@@ -127,7 +127,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
 		if !util.Compare(user.Password, l.Password) {
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
-			return 500, resp
+			return 500, resp, ""
 		}
 
 		user.Token = CreateToken(user.ID)
@@ -136,10 +136,10 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
 			resp.Data = nil
 			resp.Error = "Internal error"
 			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return 500, resp, ""
 		}
 
-		loginResp = loginResponse{&user.PassSet, "", user.Token, &tokenValidity}
+		loginResp = loginResponse{&user.PassSet, "", user.Token, &TokenValidity}
 	} else {
 		onetimecode := util.RandomCode()
 
@@ -149,7 +149,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
 			resp.Data = nil
 			resp.Error = "Internal error"
 			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return 500, resp, ""
 		}
 
 		loginResp = loginResponse{&user.PassSet, onetimecode, "", nil}
@@ -158,7 +158,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response) {
 	resp.Data = loginResp
 	resp.Error = ""
 
-	return 200, resp
+	return 200, resp, user.Token
 }
 
 // PasswordCreate is the struct to create a new password for a user
@@ -173,7 +173,7 @@ func (p *PasswordCreate) clean() {
 }
 
 // Create creates a password for a given email
-func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response) {
+func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response, string) {
 	resp := new(Response)
 
 	p.clean()
@@ -184,12 +184,12 @@ func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response) {
 		if util.IsNotFoundErr(err) {
 			resp.Data = nil
 			resp.Error = "Invalid code"
-			return 401, resp
+			return 401, resp, ""
 		}
 		resp.Data = nil
 		resp.Error = "Internal error"
 		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return 500, resp, ""
 	}
 
 	hashed := util.Hash(p.Password)
@@ -201,7 +201,7 @@ func (p *PasswordCreate) Create(db *gorm.DB) (int, *Response) {
 		resp.Data = nil
 		resp.Error = "Internal error"
 		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return 500, resp, ""
 	}
 
 	l := new(LoginUser)
