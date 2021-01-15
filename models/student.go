@@ -8,22 +8,22 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-// NewTeacher is the model to add a new teacher
-type NewTeacher struct {
+// NewStudent is a model to add a new student
+type NewStudent struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	SchoolID  string `json:"school_id"`
 }
 
-func (n *NewTeacher) clean() {
+func (n *NewStudent) clean() {
 	util.RemoveSpaces(&n.Email)
 	util.RemoveSpaces(&n.SchoolID)
 	util.Clean(&n.FirstName)
 	util.Clean(&n.LastName)
 }
 
-func (n *NewTeacher) validate() (bool, string) {
+func (n *NewStudent) validate() (bool, string) {
 	if !util.ValidateEmail(n.Email) {
 		return false, "Email is invalid"
 	}
@@ -36,8 +36,8 @@ func (n *NewTeacher) validate() (bool, string) {
 	return true, ""
 }
 
-// Add adds a new teacher to the database
-func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
+// Add adds a new student to the database
+func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 	resp := new(Response)
 
 	n.clean()
@@ -73,15 +73,8 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 	}
 
 	if found {
-
-		if user.Has(Teacher) {
-			resp.Data = nil
-			resp.Error = "User already a teacher"
-			return 409, resp
-		}
-
-		user.Perms |= Teacher
-		school.Teachers = append(school.Teachers, user)
+		user.Perms |= Student
+		school.Students = append(school.Students, user)
 
 		err = db.Save(user).Error
 		if err != nil {
@@ -105,7 +98,7 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 		user.Email = n.Email
 		user.FirstName = n.FirstName
 		user.LastName = n.LastName
-		user.Perms = Teacher
+		user.Perms = Student
 		user.PassSet = false
 
 		err = db.Create(user).Error
@@ -117,23 +110,13 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 		}
 	}
 
-	newTeacherResponse := struct {
+	newStudentResponse := struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		ID        string `json:"id"`
 	}{user.FirstName, user.LastName, user.ID}
 
-	resp.Data = newTeacherResponse
+	resp.Data = newStudentResponse
 	resp.Error = ""
 	return 200, resp
-}
-
-// DeleteTeacher is a model to delete a teacher from a database
-type DeleteTeacher struct {
-	ID string
-}
-
-// Delete deletes a teacher
-func (d *DeleteTeacher) Delete() {
-
 }

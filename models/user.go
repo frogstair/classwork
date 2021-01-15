@@ -50,3 +50,21 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *Response) {
 
 	return 200, resp
 }
+
+// Delete deletes a user
+func (u *User) Delete(db *gorm.DB) (int, *Response) {
+	resp := new(Response)
+
+	err := db.Delete(u).Error
+	if err != nil {
+		resp.Error = "internal error"
+		resp.Data = nil
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	resp.Data = true
+	resp.Error = ""
+
+	return 200, resp
+}

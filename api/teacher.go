@@ -9,8 +9,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// AddSchool adds a school
-func AddSchool(c *gin.Context) {
+// AddTeacher adds a teacher to the school
+func AddTeacher(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -28,19 +28,19 @@ func AddSchool(c *gin.Context) {
 		return
 	}
 
-	newSchool := new(m.NewSchool)
-	err := json.NewDecoder(c.Request.Body).Decode(newSchool)
+	newTeacher := new(m.NewTeacher)
+	err := json.NewDecoder(c.Request.Body).Decode(newTeacher)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newSchool.Add(db, user)
+	code, resp := newTeacher.Add(db)
 	c.JSON(code, resp)
 }
 
-// DeleteSchool will delete a school from the database
-func DeleteSchool(c *gin.Context) {
+// DeleteTeacher deletes a teacher
+func DeleteTeacher(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -58,13 +58,6 @@ func DeleteSchool(c *gin.Context) {
 		return
 	}
 
-	deleteSchool := new(m.DeleteSchool)
-	err := json.NewDecoder(c.Request.Body).Decode(deleteSchool)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid data"})
-		return
-	}
+	_ = db
 
-	code, resp := deleteSchool.Delete(db, user)
-	c.JSON(code, resp)
 }
