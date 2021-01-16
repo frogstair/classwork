@@ -28,6 +28,9 @@ func Run(wg *sync.WaitGroup) {
 
 	apiGroup := g.Group("/api")
 
+	logoutGroup := apiGroup.Group("/logout")
+	logoutGroup.POST("/", m.ValidateJWT, api.Logout)
+
 	logGroup := apiGroup.Group("/login")
 	logGroup.POST("/", api.Login)
 	logGroup.GET("/pass", api.GenerateOTC)
@@ -42,13 +45,19 @@ func Run(wg *sync.WaitGroup) {
 	schGroup := apiGroup.Group("/school")
 	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
 	schGroup.DELETE("/", m.ValidateJWT, api.DeleteSchool)
+
 	schGroup.GET("/info", m.ValidateJWT, api.GetSchool)
+
 	schGroup.POST("/teacher", m.ValidateJWT, api.AddTeacher)
 	schGroup.DELETE("/teacher", m.ValidateJWT, api.DeleteTeacher)
+
 	schGroup.POST("/student", m.ValidateJWT, api.AddStudent)
 	schGroup.DELETE("/student", m.ValidateJWT, api.DeleteStudent)
-	schGroup.POST("/subject", m.ValidateJWT, api.AddSubject)
-	schGroup.DELETE("/subject", m.ValidateJWT, api.DeleteSubject)
+
+	subGroup := schGroup.Group("/subject")
+	subGroup.POST("/", m.ValidateJWT, api.AddSubject)
+	subGroup.DELETE("/", m.ValidateJWT, api.DeleteSubject)
+	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
 
 	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
 

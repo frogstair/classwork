@@ -10,11 +10,12 @@ import (
 
 // School is the internal representation of the schools
 type School struct {
-	ID       string  `gorm:"primaryKey" json:"id"`
-	UserID   string  `gorm:"not null" json:"-"`
-	Name     string  `gorm:"not null" json:"name"`
-	Students []*User `gorm:"many2many:students" json:"students,omitempty"`
-	Teachers []*User `gorm:"many2many:teachers" json:"teachers,omitempty"`
+	ID       string     `gorm:"primaryKey" json:"id"`
+	UserID   string     `gorm:"not null" json:"-"`
+	Name     string     `gorm:"not null" json:"name"`
+	Students []*User    `gorm:"many2many:school_students" json:"students,omitempty"`
+	Teachers []*User    `gorm:"many2many:school_teachers" json:"teachers,omitempty"`
+	Subjects []*Subject `gorm:"many2many:school_subjects" json:"subjects,omitempty"`
 }
 
 // NewSchool is the model to add a new school
@@ -66,7 +67,7 @@ func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *Response) {
 
 	resp.Data = schoolResp
 	resp.Error = ""
-	return 200, resp
+	return 201, resp
 }
 
 // DeleteSchool deletes a school
@@ -111,6 +112,19 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
 		return 500, resp
 	}
 
+	subjects := make([]*Subject, 0)
+	err = db.Where("school_id = ?", school.ID).Find(subjects).Error
+	if err != nil {
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	for _, subject := range subjects {
+		go subject.Delete(db)
+	}
+
 	resp.Data = true
 	resp.Error = ""
 
@@ -132,38 +146,68 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
 	resp := new(Response)
 
 	school := new(School)
-	db.Where("id = ?", g.ID).First(school)
+	err := db.Where("id = ?", g.ID).First(school).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Invalid school ID"
+			return 400, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
 
-	if school.UserID != user.ID {
+	if school.UserID != user.ID && user.Has(Headmaster) {
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
 	}
+
+	school.Teachers = make([]*User, 0)
+	school.Students = make([]*User, 0)
+	school.Subjects = make([]*Subject, 0)
 
 	db.Model(school).Association("Teachers").Find(&school.Teachers)
 	db.Model(school).Association("Students").Find(&school.Students)
+	db.Model(school).Association("Subjects").Find(&school.Subjects)
 
-	found := false
-	for _, teacher := range school.Teachers {
-		if teacher.ID == user.ID {
-			found = true
-			break
+	for i, subject := range school.Subjects {
+		usr := new(User)
+		err := db.Where("id = ?", subject.TeacherID).First(usr).Error
+		if err != nil {
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
 		}
-	}
-	for _, student := range school.Students {
-		if found {
-			break
-		}
-		if student.ID == user.ID {
-			found = true
-			break
-		}
+		school.Subjects[i].Teacher = usr
 	}
 
-	if !found {
-		resp.Data = nil
-		resp.Error = "forbidden"
-		return 403, resp
+	if !user.Has(Headmaster) {
+		found := false
+		for _, teacher := range school.Teachers {
+			if teacher.ID == user.ID {
+				found = true
+				break
+			}
+		}
+		for _, student := range school.Students {
+			if found {
+				break
+			}
+			if student.ID == user.ID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			resp.Data = nil
+			resp.Error = "forbidden"
+			return 403, resp
+		}
 	}
 
 	if user.Has(Headmaster) {
@@ -171,9 +215,19 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
 	} else if user.Has(Teacher) {
 		school.Teachers = make([]*User, 0)
 		school.Students = make([]*User, 0)
+
+		subj := make([]*Subject, 0)
+		for _, subject := range school.Subjects {
+			if subject.TeacherID == user.ID {
+				subj = append(subj, subject)
+			}
+		}
+
+		school.Subjects = subj
 	} else if user.Has(Student) {
 		school.Teachers = make([]*User, 0)
 		school.Students = make([]*User, 0)
+		school.Subjects = make([]*Subject, 0)
 	}
 
 	resp.Data = school

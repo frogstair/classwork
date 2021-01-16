@@ -82,7 +82,7 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
 	resp.Data = userResponse
 	resp.Error = ""
 
-	return 200, resp
+	return 201, resp
 }
 
 // LoginUser is the model to create a token for the user
@@ -202,5 +202,5 @@ func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
 	resp.Data = onetimecode
 	resp.Error = ""
 
-	return 200, resp
+	return 201, resp
 }

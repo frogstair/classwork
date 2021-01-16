@@ -128,7 +128,7 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 
 	resp.Data = newStudentResponse
 	resp.Error = ""
-	return 200, resp
+	return 201, resp
 }
 
 // DeleteStudent is a model to delete a student from a database
@@ -186,5 +186,5 @@ func (d *DeleteStudent) Delete(db *gorm.DB) (int, *Response) {
 	resp.Data = true
 	resp.Error = ""
 
-	return 200, resp
+	return 202, resp
 }

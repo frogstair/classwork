@@ -67,3 +67,21 @@ func GenerateOTC(c *gin.Context) {
 	code, resp := hasPass.Create(db)
 	c.JSON(code, resp)
 }
+
+// Logout removes a token from a user
+func Logout(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	user, ok := c.Keys["usr"].(*m.User)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no user variable in context")
+	}
+
+	code, resp := user.Logout(db)
+	c.JSON(code, resp)
+}

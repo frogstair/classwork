@@ -23,6 +23,7 @@ func ValidateJWT(c *gin.Context) {
 	tokstr, err := c.Cookie("_tkn")
 	if err != nil {
 		c.JSON(400, gin.H{"error": "no token specified"})
+		c.Abort()
 		return
 	}
 
@@ -35,6 +36,7 @@ func ValidateJWT(c *gin.Context) {
 	if !token.Valid {
 		if err != nil {
 			c.JSON(401, gin.H{"error": "token is invalid"})
+			c.Abort()
 			return
 		}
 	}
@@ -44,10 +46,18 @@ func ValidateJWT(c *gin.Context) {
 	if err != nil {
 		if util.IsNotFoundErr(err) {
 			c.JSON(401, gin.H{"error": "token does not correspond to user"})
+			c.Abort()
 			return
 		}
 		log.Printf("Database error: %s\n", err.Error())
 		c.JSON(500, gin.H{"error": "internal error"})
+		c.Abort()
+		return
+	}
+
+	if user.Token != tokstr {
+		c.JSON(401, gin.H{"error": "token does not correspond to user"})
+		c.Abort()
 		return
 	}
 
