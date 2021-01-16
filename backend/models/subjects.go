@@ -86,3 +86,60 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *Response) {
 	resp.Error = ""
 	return 200, resp
 }
+
+// DeleteSubject deletes a subject
+type DeleteSubject struct {
+	ID string `json:"id"`
+}
+
+func (d *DeleteSubject) clean() {
+	util.RemoveSpaces(&d.ID)
+}
+
+// Delete deletes a subject
+func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *Response) {
+	resp := new(Response)
+
+	d.clean()
+
+	subject := new(Subject)
+	err := db.Where("id = ?", d.ID).First(subject).Error
+	if err != nil {
+		if util.IsDuplicateErr(err) {
+			resp.Data = nil
+			resp.Error = "Invalid subject id"
+			return 400, resp
+		}
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	if subject.UserID != user.ID {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
+
+	school := new(School)
+	err = db.Where("id = ?", school.ID).First(school).Error
+	if err != nil {
+		resp.Data = nil
+		resp.Error = "Internal error"
+		log.Printf("Database error: %s\n", err.Error())
+		return 500, resp
+	}
+
+	if school.UserID != user.ID && user.Has(Headmaster) {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
+
+	db.Delete(subject)
+
+	resp.Data = true
+	resp.Error = ""
+	return 200, resp
+}
