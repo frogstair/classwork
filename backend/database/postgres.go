@@ -38,7 +38,7 @@ func GetPostgres() *gorm.DB {
 
 	log.Println("Connected to database")
 
-	db.AutoMigrate(&m.User{}, &m.School{})
+	db.AutoMigrate(&m.User{}, &m.School{}, &m.Subject{})
 	log.Println("Migrated tables")
 
 	return db

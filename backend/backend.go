@@ -5,6 +5,7 @@ import (
 	"classwork/backend/database"
 	m "classwork/backend/middleware"
 	"classwork/backend/pages"
+	"log"
 	"sync"
 
 	"os"
@@ -41,9 +42,15 @@ func Run(wg *sync.WaitGroup) {
 	schGroup := apiGroup.Group("/school")
 	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
 	schGroup.DELETE("/", m.ValidateJWT, api.DeleteSchool)
+	schGroup.GET("/info", m.ValidateJWT, api.GetSchool)
 	schGroup.POST("/teacher", m.ValidateJWT, api.AddTeacher)
 	schGroup.DELETE("/teacher", m.ValidateJWT, api.DeleteTeacher)
 	schGroup.POST("/student", m.ValidateJWT, api.AddStudent)
+	schGroup.POST("/subject", m.ValidateJWT, api.AddSubject)
 
-	g.Run(os.Getenv("ADDRESS") + ":" + os.Getenv("PORT"))
+	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
+
+	log.Printf("Running backend on %s:%s\n", address, port)
+
+	g.Run(address + ":" + port)
 }

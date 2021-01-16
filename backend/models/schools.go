@@ -13,8 +13,8 @@ type School struct {
 	ID       string  `gorm:"primaryKey" json:"id"`
 	UserID   string  `gorm:"not null" json:"-"`
 	Name     string  `gorm:"not null" json:"name"`
-	Students []*User `gorm:"many2many:students"`
-	Teachers []*User `gorm:"many2many:teachers"`
+	Students []*User `gorm:"many2many:students" json:"students,omitempty"`
+	Teachers []*User `gorm:"many2many:teachers" json:"teachers,omitempty"`
 }
 
 // NewSchool is the model to add a new school
@@ -113,6 +113,70 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
 
 	resp.Data = true
 	resp.Error = ""
+
+	return 200, resp
+}
+
+// GetSchoolInfo is the model to get school info
+type GetSchoolInfo struct {
+	ID string `json:"id"`
+}
+
+func (g *GetSchoolInfo) clean() {
+	util.RemoveSpaces(&g.ID)
+}
+
+// GetInfo gets the info for a school
+func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
+
+	resp := new(Response)
+
+	school := new(School)
+	db.Where("id = ?", g.ID).First(school)
+
+	if school.UserID != user.ID {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
+
+	db.Model(school).Association("Teachers").Find(&school.Teachers)
+	db.Model(school).Association("Students").Find(&school.Students)
+
+	found := false
+	for _, teacher := range school.Teachers {
+		if teacher.ID == user.ID {
+			found = true
+			break
+		}
+	}
+	for _, student := range school.Students {
+		if found {
+			break
+		}
+		if student.ID == user.ID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
+
+	if user.Has(Headmaster) {
+
+	} else if user.Has(Teacher) {
+		school.Teachers = make([]*User, 0)
+		school.Students = make([]*User, 0)
+	} else if user.Has(Student) {
+		school.Teachers = make([]*User, 0)
+		school.Students = make([]*User, 0)
+	}
+
+	resp.Data = school
 
 	return 200, resp
 }

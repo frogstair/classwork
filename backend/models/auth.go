@@ -184,8 +184,8 @@ func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
 
 	if user.PassSet {
 		resp.Data = nil
-		resp.Error = "not found"
-		return 404, resp
+		resp.Error = "resource gone"
+		return 410, resp
 	}
 
 	onetimecode := util.RandomCode()
