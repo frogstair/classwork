@@ -1,6 +1,7 @@
 package util
 
 import (
+	"html"
 	"regexp"
 	"strings"
 )
@@ -19,12 +20,14 @@ func ValidateEmail(email string) bool {
 // Clean removes duplicate whitespace and illegal characters
 func Clean(text *string) {
 	*text = strings.TrimSpace(*text)
+	*text = html.EscapeString(*text)
 	reg := regexp.MustCompile(`([^a-zA-Z1-9\s])|(\s{2,})`)
 	*text = reg.ReplaceAllString(*text, " ")
 }
 
 // RemoveSpaces removes n duplicates and leading/trailing spaces from a string
 func RemoveSpaces(password *string) {
+	*password = html.EscapeString(*password)
 	*password = strings.TrimSpace(*password)
 	reg := regexp.MustCompile(`\s`)
 	*password = reg.ReplaceAllString(*password, "")

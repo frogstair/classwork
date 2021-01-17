@@ -58,6 +58,7 @@ func Run(wg *sync.WaitGroup) {
 	subGroup.POST("/", m.ValidateJWT, api.AddSubject)
 	subGroup.DELETE("/", m.ValidateJWT, api.DeleteSubject)
 	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
+	subGroup.DELETE("/students", m.ValidateJWT, nil)
 
 	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
 
