@@ -21,7 +21,7 @@ func ValidateEmail(email string) bool {
 func Clean(text *string) {
 	*text = strings.TrimSpace(*text)
 	*text = html.EscapeString(*text)
-	reg := regexp.MustCompile(`([^a-zA-Z1-9\s])|(\s{2,})`)
+	reg := regexp.MustCompile(`([^a-zA-Z0-9\s])|(\s{2,})`)
 	*text = reg.ReplaceAllString(*text, " ")
 }
 

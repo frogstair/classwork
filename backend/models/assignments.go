@@ -37,7 +37,7 @@ func (n *NewAssignment) clean() {
 	util.Clean(&n.Text)
 	util.RemoveSpaces(&n.SubjectID)
 	for i := range n.Files {
-		util.Clean(&n.Files[i])
+		util.RemoveSpaces(&n.Files[i])
 	}
 }
 
@@ -124,7 +124,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *Response) {
 		TeacherID string   `json:"teacher_id"`
 		SubjectID string   `json:"subject_id"`
 		Files     []string `json:"files"`
-	}{assignment.ID, assignment.Name, assignment.TeacherID, assignment.TeacherID, names}
+	}{assignment.ID, assignment.Name, assignment.TeacherID, assignment.SubjectID, names}
 
 	resp.Data = assgn
 	resp.Error = ""

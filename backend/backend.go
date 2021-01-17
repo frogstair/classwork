@@ -62,6 +62,9 @@ func Run(wg *sync.WaitGroup) {
 	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
 	subGroup.DELETE("/students", m.ValidateJWT, nil)
 
+	assgnGroup := subGroup.Group("/assignment")
+	assgnGroup.POST("/", m.ValidateJWT, api.NewAssignment)
+
 	g.Use(garbage.AddCollectorToContext)
 	go garbage.Run()
 
