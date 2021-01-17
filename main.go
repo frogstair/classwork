@@ -2,7 +2,7 @@ package main
 
 import (
 	"classwork/backend"
-	"classwork/fileserver"
+
 	"log"
 	"math/rand"
 	"sync"
@@ -23,7 +23,6 @@ func main() {
 	wg.Add(2)
 
 	go backend.Run(&wg)
-	go fileserver.Run(&wg)
 
 	wg.Wait()
 }

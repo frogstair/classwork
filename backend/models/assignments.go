@@ -88,6 +88,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *Response) {
 	names := make([]string, len(n.Files))
 
 	for i, file := range n.Files {
+		file = util.ToRelativeFPath(file)
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			resp.Data = nil
 			resp.Error = "Internal error"

@@ -3,8 +3,10 @@ package backend
 import (
 	"classwork/backend/api"
 	"classwork/backend/database"
+	"classwork/backend/garbage"
 	m "classwork/backend/middleware"
 	"classwork/backend/pages"
+
 	"log"
 	"sync"
 
@@ -59,6 +61,14 @@ func Run(wg *sync.WaitGroup) {
 	subGroup.DELETE("/", m.ValidateJWT, api.DeleteSubject)
 	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
 	subGroup.DELETE("/students", m.ValidateJWT, nil)
+
+	g.Use(garbage.AddCollectorToContext)
+	go garbage.Run()
+
+	g.Static("/files", "./files")
+
+	fsgroup := g.Group("/files")
+	fsgroup.POST("/", api.CreateFile)
 
 	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
 
