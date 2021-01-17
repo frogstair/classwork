@@ -7,7 +7,7 @@ import (
 
 // ToRelativeFPath converts file name to filepath in file server
 func ToRelativeFPath(p string) string {
-	return "fileserver/files/" + p
+	return "./files/" + p
 }
 
 // SplitName splits the filename info extension and name

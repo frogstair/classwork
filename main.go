@@ -2,6 +2,7 @@ package main
 
 import (
 	"classwork/backend"
+	"classwork/fileserver"
 	"log"
 	"math/rand"
 	"sync"
@@ -19,9 +20,10 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 
 	go backend.Run(&wg)
+	go fileserver.Run(&wg)
 
 	wg.Wait()
 }
