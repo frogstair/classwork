@@ -38,6 +38,7 @@ func CreateFile(c *gin.Context) {
 		name := util.GenerateName()
 
 		name = name + "_0" + ext
+		fname := name
 
 		name = util.ToRelativeFPath(name)
 
@@ -48,7 +49,7 @@ func CreateFile(c *gin.Context) {
 			return
 		}
 
-		names[i] = name
+		names[i] = fname
 	}
 
 	resp := struct {
