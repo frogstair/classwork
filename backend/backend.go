@@ -75,7 +75,7 @@ func Run(wg *sync.WaitGroup) {
 
 	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
 
-	log.Printf("Running backend on %s:%s\n", address, port)
+	log.Printf("Running on %s:%s\n", address, port)
 
 	g.Run(address + ":" + port)
 }
