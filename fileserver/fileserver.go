@@ -24,6 +24,8 @@ func Run(wg *sync.WaitGroup) {
 	g.Use(gin.Recovery())
 	g.Use(garbage.AddCollectorToContext)
 
+	g.Static("/files", "./files")
+
 	fsgroup := g.Group("/files")
 	fsgroup.POST("/", api.CreateFile)
 

@@ -25,5 +25,5 @@ func GenerateName() string {
 
 // ToRelativeFPath converts file name to filepath in file server
 func ToRelativeFPath(p string) string {
-	return "./files/" + p
+	return "files/" + p
 }
