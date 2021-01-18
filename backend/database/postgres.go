@@ -34,11 +34,11 @@ func GetPostgres() *gorm.DB {
 		panic(fmt.Sprintf("===========\ncannot establish database connection: \n%s\n===========", err))
 	}
 	connected = true
-	db.LogMode(false)
+	//db.LogMode(false)
 
 	log.Println("Connected to database")
 
-	db.AutoMigrate(&m.User{}, &m.School{}, &m.Subject{}, &m.Assignment{})
+	db.AutoMigrate(&m.User{}, &m.School{}, &m.Subject{}, &m.Assignment{}, &m.Request{}, &m.AssignmentFile{}, &m.RequestUpload{})
 	log.Println("Migrated tables")
 
 	return db

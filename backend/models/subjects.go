@@ -193,7 +193,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 	usr := new(User)
 	err := db.Where("id = ?", n.ID).First(usr).Error
 	if err != nil {
-		if util.IsDuplicateErr(err) {
+		if util.IsNotFoundErr(err) {
 			resp.Data = nil
 			resp.Error = "Invalid user id"
 			return 400, resp
@@ -257,7 +257,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 		return 403, resp
 	}
 
-	if !usr.Has(Student) || usr.ID == user.ID {
+	if !usr.Has(Student) {
 		resp.Data = nil
 		resp.Error = "user not a student"
 		return 400, resp
@@ -290,6 +290,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 	}
 
 	subject.Students = append(subject.Students, usr)
+	subject.NumStudents++
 	err = db.Save(subject).Error
 	if err != nil {
 		resp.Data = nil

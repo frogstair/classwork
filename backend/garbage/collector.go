@@ -2,7 +2,6 @@ package garbage
 
 import (
 	"classwork/backend/util"
-	"fmt"
 	"os"
 	"time"
 
@@ -36,16 +35,15 @@ func Run() {
 		case f := <-fileChannel:
 			go func(files []string) {
 				for i := 0; i < 10; i++ {
-					time.Sleep(3 * time.Second)
-					fmt.Println("Pass")
+					time.Sleep(1 * time.Minute)
 					for _, file := range files {
 						if _, err := os.Stat(util.ToRelativeFPath(file)); os.IsNotExist(err) {
-							fmt.Println("End")
 							return
 						}
 					}
 				}
 				for _, file := range files {
+					file = util.ToRelativeFPath(file)
 					if _, err := os.Stat(file); os.IsNotExist(err) {
 						continue
 					}

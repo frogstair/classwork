@@ -72,15 +72,15 @@ func AddStudentSubject(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
+	if !user.Has(m.Teacher) && !user.Has(m.Headmaster) {
+		c.JSON(403, gin.H{"error": "fobidden"})
+		return
+	}
+
 	newStudentSubject := new(m.NewSubjectStudent)
 	err := json.NewDecoder(c.Request.Body).Decode(newStudentSubject)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
-		return
-	}
-
-	if !user.Has(m.Teacher) && !user.Has(m.Headmaster) {
-		c.JSON(403, gin.H{"error": "fobidden"})
 		return
 	}
 

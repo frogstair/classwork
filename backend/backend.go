@@ -64,6 +64,7 @@ func Run(wg *sync.WaitGroup) {
 
 	assgnGroup := subGroup.Group("/assignment")
 	assgnGroup.POST("/", m.ValidateJWT, api.NewAssignment)
+	assgnGroup.POST("/file", m.ValidateJWT, api.AssignmentFile)
 
 	g.Use(garbage.AddCollectorToContext)
 	go garbage.Run()

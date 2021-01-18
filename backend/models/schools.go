@@ -173,6 +173,15 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
 	db.Model(school).Association("Students").Find(&school.Students)
 	db.Model(school).Association("Subjects").Find(&school.Subjects)
 
+	for i, subj := range school.Subjects {
+		db.Where("subject_id = ?", subj.ID).Find(&school.Subjects[i].Assignments)
+		for j, assignment := range school.Subjects[i].Assignments {
+			db.Model(assignment).Association("Requests").Find(&school.Subjects[i].Assignments[j].Requests)
+			db.Model(assignment).Association("Files").Find(&school.Subjects[i].Assignments[j].Files)
+			db.Model(assignment).Association("CompletedBy").Find(&school.Subjects[i].Assignments[j].CompletedBy)
+		}
+	}
+
 	for i, subject := range school.Subjects {
 		usr := new(User)
 		err := db.Where("id = ?", subject.TeacherID).First(usr).Error
