@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	m "classwork/backend/models"
+	m "classwork/models"
 
 	"github.com/jinzhu/gorm"
 )

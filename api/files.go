@@ -1,7 +1,7 @@
 package api
 
 import (
-	"classwork/backend/util"
+	"classwork/util"
 	"fmt"
 	"log"
 

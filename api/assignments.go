@@ -1,7 +1,7 @@
 package api
 
 import (
-	m "classwork/backend/models"
+	m "classwork/models"
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"

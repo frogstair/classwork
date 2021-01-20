@@ -1,28 +1,29 @@
 package models
 
 import (
-	"classwork/backend/util"
+	"classwork/util"
+	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
 )
 
-// NewStudent is a model to add a new student
-type NewStudent struct {
+// NewTeacher is the model to add a new teacher
+type NewTeacher struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	SchoolID  string `json:"school_id"`
 }
 
-func (n *NewStudent) clean() {
+func (n *NewTeacher) clean() {
 	util.RemoveSpaces(&n.Email)
 	util.RemoveSpaces(&n.SchoolID)
 	util.Clean(&n.FirstName)
 	util.Clean(&n.LastName)
 }
 
-func (n *NewStudent) validate() (bool, string) {
+func (n *NewTeacher) validate() (bool, string) {
 	if !util.ValidateEmail(n.Email) {
 		return false, "Email is invalid"
 	}
@@ -35,8 +36,8 @@ func (n *NewStudent) validate() (bool, string) {
 	return true, ""
 }
 
-// Add adds a new student to the database
-func (n *NewStudent) Add(db *gorm.DB) (int, *util.Response) {
+// Add adds a new teacher to the database
+func (n *NewTeacher) Add(db *gorm.DB) (int, *util.Response) {
 	resp := new(util.Response)
 
 	n.clean()
@@ -66,17 +67,30 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *util.Response) {
 	}
 
 	if found {
-		user.Perms |= Student
-		school.Students = append(school.Students, user)
+
+		if user.Has(Teacher) {
+			resp.Data = nil
+			resp.Error = "User already a teacher"
+			return 409, resp
+		}
+
+		user.Perms |= Teacher
+		school.Teachers = append(school.Teachers, user)
 
 		err = db.Save(user).Error
 		if err != nil {
-			return util.DatabaseError(err, resp)
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
 		}
 
 		err = db.Save(school).Error
 		if err != nil {
-			return util.DatabaseError(err, resp)
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
 		}
 	} else {
 		user = new(User)
@@ -85,46 +99,52 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *util.Response) {
 		user.Email = n.Email
 		user.FirstName = n.FirstName
 		user.LastName = n.LastName
-		user.Perms = Student
+		user.Perms = Teacher
 		user.PassSet = false
 
 		err = db.Create(user).Error
 		if err != nil {
-			return util.DatabaseError(err, resp)
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
 		}
 
-		school.Students = append(school.Students, user)
+		school.Teachers = append(school.Teachers, user)
 
 		err = db.Save(school).Error
 		if err != nil {
-			return util.DatabaseError(err, resp)
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
 		}
 	}
 
-	newStudentResponse := struct {
+	newTeacherResponse := struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		ID        string `json:"id"`
 	}{user.FirstName, user.LastName, user.ID}
 
-	resp.Data = newStudentResponse
+	resp.Data = newTeacherResponse
 	resp.Error = ""
 	return 201, resp
 }
 
-// DeleteStudent is a model to delete a student from a database
-type DeleteStudent struct {
+// DeleteTeacher is a model to delete a teacher from a database
+type DeleteTeacher struct {
 	UserID   string `json:"id"`
 	SchoolID string `json:"school_id"`
 }
 
-func (d *DeleteStudent) clean() {
+func (d *DeleteTeacher) clean() {
 	util.RemoveSpaces(&d.SchoolID)
 	util.RemoveSpaces(&d.UserID)
 }
 
 // Delete deletes a teacher
-func (d *DeleteStudent) Delete(db *gorm.DB) (int, *util.Response) {
+func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *util.Response) {
 	resp := new(util.Response)
 
 	d.clean()
@@ -151,8 +171,8 @@ func (d *DeleteStudent) Delete(db *gorm.DB) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	db.Model(school).Association("Students").Delete(user)
-	user.Perms &^= Student
+	db.Model(school).Association("Teachers").Delete(user)
+	user.Perms &^= Teacher
 
 	if user.Perms == 0 {
 		return user.Delete(db)

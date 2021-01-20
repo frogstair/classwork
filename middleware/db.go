@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"classwork/backend/database"
+	"classwork/database"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq" //Required by GORM

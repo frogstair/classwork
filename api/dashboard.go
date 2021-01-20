@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 
-	m "classwork/backend/models"
+	m "classwork/models"
 )
 
 // GetDashboard gets the dashboard for a user

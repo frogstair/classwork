@@ -1,7 +1,7 @@
 package models
 
 import (
-	"classwork/backend/util"
+	"classwork/util"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"

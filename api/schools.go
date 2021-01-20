@@ -1,15 +1,16 @@
 package api
 
 import (
-	m "classwork/backend/models"
+	m "classwork/models"
+
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 
-// AddSubject adds a new subject
-func AddSubject(c *gin.Context) {
+// AddSchool adds a school
+func AddSchool(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -22,19 +23,24 @@ func AddSubject(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	newSubject := new(m.NewSubject)
-	err := json.NewDecoder(c.Request.Body).Decode(newSubject)
+	if !user.Has(m.Headmaster) {
+		c.JSON(403, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
+	newSchool := new(m.NewSchool)
+	err := json.NewDecoder(c.Request.Body).Decode(newSchool)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newSubject.Add(db, user)
+	code, resp := newSchool.Add(db, user)
 	c.JSON(code, resp)
 }
 
-// DeleteSubject deletes a subject
-func DeleteSubject(c *gin.Context) {
+// GetSchool gets info about the school
+func GetSchool(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -47,19 +53,19 @@ func DeleteSubject(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	deleteSubject := new(m.DeleteSubject)
-	err := json.NewDecoder(c.Request.Body).Decode(deleteSubject)
+	schoolGetInfo := new(m.GetSchoolInfo)
+	err := json.NewDecoder(c.Request.Body).Decode(schoolGetInfo)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := deleteSubject.Delete(db, user)
+	code, resp := schoolGetInfo.GetInfo(db, user)
 	c.JSON(code, resp)
 }
 
-// AddStudentSubject adds a new student to a subject
-func AddStudentSubject(c *gin.Context) {
+// DeleteSchool will delete a school from the database
+func DeleteSchool(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -72,18 +78,18 @@ func AddStudentSubject(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Teacher) && !user.Has(m.Headmaster) {
-		c.JSON(403, gin.H{"error": "fobidden"})
+	if !user.Has(m.Headmaster) {
+		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
 
-	newStudentSubject := new(m.NewSubjectStudent)
-	err := json.NewDecoder(c.Request.Body).Decode(newStudentSubject)
+	deleteSchool := new(m.DeleteSchool)
+	err := json.NewDecoder(c.Request.Body).Decode(deleteSchool)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newStudentSubject.Add(db, user)
+	code, resp := deleteSchool.Delete(db, user)
 	c.JSON(code, resp)
 }

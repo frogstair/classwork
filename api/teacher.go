@@ -1,16 +1,16 @@
 package api
 
 import (
-	"encoding/json"
+	m "classwork/models"
 
-	m "classwork/backend/models"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 
-// AddStudent adds a new student
-func AddStudent(c *gin.Context) {
+// AddTeacher adds a teacher to the school
+func AddTeacher(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -28,19 +28,19 @@ func AddStudent(c *gin.Context) {
 		return
 	}
 
-	newStudent := new(m.NewStudent)
-	err := json.NewDecoder(c.Request.Body).Decode(newStudent)
+	newTeacher := new(m.NewTeacher)
+	err := json.NewDecoder(c.Request.Body).Decode(newTeacher)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newStudent.Add(db)
+	code, resp := newTeacher.Add(db)
 	c.JSON(code, resp)
 }
 
-// DeleteStudent adds a new student
-func DeleteStudent(c *gin.Context) {
+// DeleteTeacher deletes a teacher
+func DeleteTeacher(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
@@ -58,13 +58,13 @@ func DeleteStudent(c *gin.Context) {
 		return
 	}
 
-	deleteStudent := new(m.DeleteStudent)
-	err := json.NewDecoder(c.Request.Body).Decode(deleteStudent)
+	deleteTeacher := new(m.DeleteTeacher)
+	err := json.NewDecoder(c.Request.Body).Decode(deleteTeacher)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := deleteStudent.Delete(db)
+	code, resp := deleteTeacher.Delete(db)
 	c.JSON(code, resp)
 }

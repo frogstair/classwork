@@ -1,7 +1,7 @@
 package garbage
 
 import (
-	"classwork/backend/util"
+	"classwork/util"
 	"os"
 	"time"
 
