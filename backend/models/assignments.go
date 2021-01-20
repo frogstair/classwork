@@ -2,7 +2,6 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 	"os"
 	"time"
 
@@ -77,8 +76,8 @@ func (n *NewAssignment) validate() (bool, string) {
 }
 
 // Create creates a new assignment
-func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 	n.clean()
 
 	if valid, reason := n.validate(); !valid {
@@ -101,10 +100,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid subject ID"
 			return 403, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if subject.TeacherID != user.ID {
@@ -142,10 +138,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *Response) {
 
 	err = db.Save(assignment).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	requests := make([]*Request, len(n.UploadRequests))
@@ -197,8 +190,8 @@ func (n *NewRequestComplete) clean() {
 }
 
 // Complete completes the upload request
-func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 
 	n.clean()
 
@@ -210,19 +203,33 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *Response) 
 			resp.Error = "request not found"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	assgn := new(Assignment)
 	err = db.Where("id = ?", request.AssignmentID).First(assgn).Error
 	if err != nil {
+		return util.DatabaseError(err, resp)
+	}
+
+	subj := new(Subject)
+	err = db.Where("id = ?", assgn.SubjectID).First(subj).Error
+	if err != nil {
+		return util.DatabaseError(err, resp)
+	}
+
+	db.Model(subj).Association("Students").Find(&subj.Students)
+	found := false
+	for _, student := range subj.Students {
+		if student.ID == user.ID {
+			found = true
+			break
+		}
+	}
+	if !found {
 		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		resp.Error = "user not in subject"
+		return 403, resp
 	}
 
 	db.Model(request).Association("Uploads").Find(&request.Uploads)

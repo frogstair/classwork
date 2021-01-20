@@ -2,7 +2,6 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
@@ -21,15 +20,12 @@ type Subject struct {
 }
 
 // Delete deletes a subject
-func (s *Subject) Delete(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (s *Subject) Delete(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	err := db.Delete(s).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	resp.Data = true
@@ -57,8 +53,8 @@ func (n *NewSubject) validate() (bool, string) {
 }
 
 // Add adds a subject to the database
-func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *Response) {
-	resp := new(Response)
+func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *util.Response) {
+	resp := new(util.Response)
 
 	n.clean()
 
@@ -76,10 +72,7 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *Response) {
 			resp.Error = "Invalid school id"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	subj := new(Subject)
@@ -92,19 +85,13 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *Response) {
 
 	err = db.Create(subj).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school.Subjects = append(school.Subjects, subj)
 	err = db.Save(school).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	subjResponse := struct {
@@ -127,8 +114,8 @@ func (d *DeleteSubject) clean() {
 }
 
 // Delete deletes a subject
-func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 
 	d.clean()
 
@@ -140,10 +127,7 @@ func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid subject id"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if subject.Teacher.ID != user.ID {
@@ -155,10 +139,7 @@ func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *Response) {
 	school := new(School)
 	err = db.Where("id = ?", school.ID).First(school).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if school.UserID != user.ID && user.Has(Headmaster) {
@@ -186,8 +167,8 @@ func (n *NewSubjectStudent) clean() {
 }
 
 // Add adds a new student to a subject
-func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 	n.clean()
 
 	usr := new(User)
@@ -198,10 +179,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid user id"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	subject := new(Subject)
@@ -212,43 +190,28 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid subject id"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school := new(School)
 	err = db.Where("id = ?", subject.SchoolID).First(school).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	err = db.Model(school).Association("Students").Find(&school.Students).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	err = db.Model(subject).Association("Students").Find(&subject.Students).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	err = db.Model(user).Association("Subjects").Find(&user.Subjects).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if subject.TeacherID != user.ID {
@@ -293,19 +256,13 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *Response) {
 	subject.NumStudents++
 	err = db.Save(subject).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	user.Subjects = append(user.Subjects, subject)
 	err = db.Save(user).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	studentResponse := struct {

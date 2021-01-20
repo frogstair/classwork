@@ -2,7 +2,6 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
@@ -37,8 +36,8 @@ func (n *NewStudent) validate() (bool, string) {
 }
 
 // Add adds a new student to the database
-func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (n *NewStudent) Add(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	n.clean()
 
@@ -52,10 +51,7 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 	err := db.Where("email = ?", n.Email).First(user).Error
 	found := !util.IsNotFoundErr(err)
 	if err != nil && found {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school := new(School)
@@ -66,10 +62,7 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 			resp.Error = "School not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if found {
@@ -78,18 +71,12 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 
 		err = db.Save(user).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 
 		err = db.Save(school).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 	} else {
 		user = new(User)
@@ -103,20 +90,14 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *Response) {
 
 		err = db.Create(user).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 
 		school.Students = append(school.Students, user)
 
 		err = db.Save(school).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 	}
 
@@ -143,8 +124,8 @@ func (d *DeleteStudent) clean() {
 }
 
 // Delete deletes a teacher
-func (d *DeleteStudent) Delete(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (d *DeleteStudent) Delete(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	d.clean()
 
@@ -156,10 +137,7 @@ func (d *DeleteStudent) Delete(db *gorm.DB) (int, *Response) {
 			resp.Error = "Teacher not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school := new(School)
@@ -170,10 +148,7 @@ func (d *DeleteStudent) Delete(db *gorm.DB) (int, *Response) {
 			resp.Error = "Teacher not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	db.Model(school).Association("Students").Delete(user)

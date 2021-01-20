@@ -2,16 +2,9 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 
 	"github.com/jinzhu/gorm"
 )
-
-// Response is the response struct, that will be sent back to the user
-type Response struct {
-	Error string      `json:"error,omitempty"`
-	Data  interface{} `json:"data,omitempty"`
-}
 
 // Email validates if the email supplied is correct
 type Email struct {
@@ -31,8 +24,8 @@ func (e *Email) validate() (bool, string) {
 }
 
 // Valid returns if the email is valid
-func (e *Email) Valid(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (e *Email) Valid(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 	e.clean()
 	user := new(User)
 
@@ -51,10 +44,7 @@ func (e *Email) Valid(db *gorm.DB) (int, *Response) {
 			resp.Error = ""
 			return 200, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	resp.Data = false

@@ -38,7 +38,8 @@ func NewAssignment(c *gin.Context) {
 	c.JSON(code, resp)
 }
 
-func AssignmentFile(c *gin.Context) {
+// CompleteAssignment completes an assignment
+func CompleteAssignment(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})

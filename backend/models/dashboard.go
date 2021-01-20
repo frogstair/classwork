@@ -14,6 +14,7 @@ type HeadmasterDashboard struct {
 
 // TeacherDashboard contains headmaster information
 type TeacherDashboard struct {
+	Subjects []*Subject `json:"subjects"`
 }
 
 // StudentDashboard contains headmaster information

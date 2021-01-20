@@ -2,7 +2,6 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
@@ -38,8 +37,8 @@ func (r *RegisterUser) validate() (bool, string) {
 }
 
 // Register registers the user intp the database
-func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (r *RegisterUser) Register(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	r.clean()
 	valid, reason := r.validate()
@@ -67,10 +66,7 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *Response) {
 			resp.Error = "Email is taken"
 			return 409, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	userResponse := struct {
@@ -99,8 +95,8 @@ func (l *LoginUser) clean() {
 }
 
 // Login will generate a token for the user
-func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
-	resp := new(Response)
+func (l *LoginUser) Login(db *gorm.DB) (int, *util.Response, string) {
+	resp := new(util.Response)
 	l.clean()
 
 	user := new(User)
@@ -111,9 +107,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
 			resp.Error = "Invalid email or password"
 			return 401, resp, ""
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
+		_, resp = util.DatabaseError(err, resp)
 		return 500, resp, ""
 	}
 
@@ -138,9 +132,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *Response, string) {
 	user.Token = CreateToken(user.ID)
 	err = db.Save(user).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
+		_, resp = util.DatabaseError(err, resp)
 		return 500, resp, ""
 	}
 
@@ -165,8 +157,8 @@ func (o *OTCCreate) clean() {
 }
 
 // Create creates an OTC for the user
-func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (o *OTCCreate) Create(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 	user := new(User)
 
 	err := db.Where("email = ?", o.Email).First(user).Error
@@ -176,10 +168,7 @@ func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
 			resp.Error = "Invalid user"
 			return 403, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if user.PassSet {
@@ -193,10 +182,7 @@ func (o *OTCCreate) Create(db *gorm.DB) (int, *Response) {
 	user.OneTimeCode = onetimecode
 	err = db.Save(user).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	resp.Data = onetimecode

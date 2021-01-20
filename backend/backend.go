@@ -20,6 +20,7 @@ func Run(wg *sync.WaitGroup) {
 	db := database.GetPostgres()
 	defer db.Close()
 	defer wg.Done()
+	defer func() { garbage.Quit <- true }()
 
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.New()
@@ -64,7 +65,7 @@ func Run(wg *sync.WaitGroup) {
 
 	assgnGroup := subGroup.Group("/assignment")
 	assgnGroup.POST("/", m.ValidateJWT, api.NewAssignment)
-	assgnGroup.POST("/file", m.ValidateJWT, api.AssignmentFile)
+	assgnGroup.POST("/complete", m.ValidateJWT, api.CompleteAssignment)
 
 	g.Use(garbage.AddCollectorToContext)
 	go garbage.Run()

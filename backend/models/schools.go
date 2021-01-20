@@ -2,7 +2,6 @@ package models
 
 import (
 	"classwork/backend/util"
-	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
@@ -35,8 +34,8 @@ func (n *NewSchool) validate() (bool, string) {
 }
 
 // Add adds a new school to the database
-func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 
 	n.clean()
 
@@ -54,10 +53,7 @@ func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *Response) {
 
 	err := db.Save(school).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	schoolResp := struct {
@@ -80,8 +76,8 @@ func (d *DeleteSchool) clean() {
 }
 
 // Delete will delete a school
-func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
-	resp := new(Response)
+func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
 	d.clean()
 	school := new(School)
 
@@ -92,10 +88,7 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid school ID"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if school.UserID != user.ID {
@@ -106,19 +99,13 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *Response) {
 
 	err = db.Delete(school).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	subjects := make([]*Subject, 0)
 	err = db.Where("school_id = ?", school.ID).Find(subjects).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	for _, subject := range subjects {
@@ -141,9 +128,9 @@ func (g *GetSchoolInfo) clean() {
 }
 
 // GetInfo gets the info for a school
-func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
+func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 
-	resp := new(Response)
+	resp := new(util.Response)
 
 	school := new(School)
 	err := db.Where("id = ?", g.ID).First(school).Error
@@ -153,10 +140,7 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
 			resp.Error = "Invalid school ID"
 			return 400, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if school.UserID != user.ID && user.Has(Headmaster) {
@@ -186,10 +170,7 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *Response) {
 		usr := new(User)
 		err := db.Where("id = ?", subject.TeacherID).First(usr).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 		school.Subjects[i].Teacher = usr
 	}

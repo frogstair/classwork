@@ -1,6 +1,7 @@
 package models
 
 import (
+	"classwork/backend/util"
 	"log"
 
 	"github.com/jinzhu/gorm"
@@ -27,8 +28,8 @@ func (u *User) Has(r Role) bool {
 }
 
 // GetDashboard gets the users dashboard
-func (u *User) GetDashboard(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	dashboard := new(Dashboard)
 
@@ -45,6 +46,19 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *Response) {
 
 		dashboard.Headmaster = hmDashboard
 	}
+	if u.Has(Teacher) {
+		tchDashboard := new(TeacherDashboard)
+
+		err := db.Where("teacher_id = ?", u.ID).Find(&tchDashboard.Subjects).Error
+		if err != nil {
+			resp.Data = nil
+			resp.Error = "Internal error"
+			log.Printf("Database error: %s\n", err.Error())
+			return 500, resp
+		}
+
+		dashboard.Teacher = tchDashboard
+	}
 
 	resp.Data = dashboard
 	resp.Error = ""
@@ -53,8 +67,8 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *Response) {
 }
 
 // Delete deletes a user
-func (u *User) Delete(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (u *User) Delete(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	err := db.Delete(u).Error
 	if err != nil {
@@ -71,8 +85,8 @@ func (u *User) Delete(db *gorm.DB) (int, *Response) {
 }
 
 // Logout removes a token from a user
-func (u *User) Logout(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (u *User) Logout(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	u.Token = ""
 	err := db.Save(u).Error

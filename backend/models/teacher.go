@@ -37,8 +37,8 @@ func (n *NewTeacher) validate() (bool, string) {
 }
 
 // Add adds a new teacher to the database
-func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (n *NewTeacher) Add(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	n.clean()
 
@@ -52,10 +52,7 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 	err := db.Where("email = ?", n.Email).First(user).Error
 	found := !util.IsNotFoundErr(err)
 	if err != nil && found {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school := new(School)
@@ -66,10 +63,7 @@ func (n *NewTeacher) Add(db *gorm.DB) (int, *Response) {
 			resp.Error = "School not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	if found {
@@ -150,8 +144,8 @@ func (d *DeleteTeacher) clean() {
 }
 
 // Delete deletes a teacher
-func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *Response) {
-	resp := new(Response)
+func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
 
 	d.clean()
 
@@ -163,10 +157,7 @@ func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *Response) {
 			resp.Error = "Teacher not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	school := new(School)
@@ -177,10 +168,7 @@ func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *Response) {
 			resp.Error = "Teacher not found"
 			return 404, resp
 		}
-		resp.Data = nil
-		resp.Error = "Internal error"
-		log.Printf("Database error: %s\n", err.Error())
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	db.Model(school).Association("Teachers").Delete(user)
