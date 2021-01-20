@@ -20,7 +20,7 @@ type Assignment struct {
 	Files        []*AssignmentFile `json:"files,omitempty"`
 	TimeDue      *time.Time        `json:"time_due,omitempty"`
 	TimeAssigned *time.Time        `json:"time_assigned"`
-	Requests     []*Request        `json:"uploads,omitempty"`
+	Requests     []*Request        `json:"requests,omitempty"`
 	CompletedBy  []*User           `gorm:"many2many:assignments_completed" json:"comleted_by,omitempty"`
 }
 
@@ -32,10 +32,11 @@ type AssignmentFile struct {
 
 // Request is the model to request an upload for the students
 type Request struct {
-	ID           string           `gorm:"primaryKey" json:"id"`
-	AssignmentID string           `json:"-"`
-	Name         string           `gorm:"not null" json:"name"`
-	Uploads      []*RequestUpload `json:"uploads,omitempty"`
+	ID           string            `gorm:"primaryKey" json:"id"`
+	AssignmentID string            `json:"-"`
+	Name         string            `gorm:"not null" json:"name"`
+	Complete     *bool             `gorm:"-" json:"complete,omitempty"`
+	Uploads      *[]*RequestUpload `json:"uploads,omitempty"`
 }
 
 // RequestUpload is the model to tracks who uploaded what
@@ -245,7 +246,7 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	reqUpl.RequestID = request.ID
 	reqUpl.UserID = user.ID
 
-	request.Uploads = append(request.Uploads, reqUpl)
+	*request.Uploads = append(*request.Uploads, reqUpl)
 	err = db.Save(request).Error
 	if err != nil {
 		resp.Data = nil
@@ -259,7 +260,7 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	for _, req := range assgn.Requests {
 		db.Model(req).Association("Uploads").Find(&req.Uploads)
 		found := false
-		for _, upload := range req.Uploads {
+		for _, upload := range *req.Uploads {
 			if upload.UserID == user.ID {
 				found = true
 				break

@@ -38,10 +38,7 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 
 		err := db.Where("user_id = ?", u.ID).Find(&hmDashboard.Schools).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 
 		dashboard.Headmaster = hmDashboard
@@ -51,13 +48,43 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 
 		err := db.Where("teacher_id = ?", u.ID).Find(&tchDashboard.Subjects).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			log.Printf("Database error: %s\n", err.Error())
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 
 		dashboard.Teacher = tchDashboard
+	}
+	if u.Has(Student) {
+		stuDashboard := new(StudentDashboard)
+
+		db.Model(u).Association("Subjects").Find(&u.Subjects)
+		for s, subject := range u.Subjects {
+			db.Where("subject_id = ?", subject.ID).Find(&subject.Assignments)
+			u.Subjects[s] = subject
+			for a, assignment := range subject.Assignments {
+				db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+				u.Subjects[s].Assignments[a] = assignment
+				for r, req := range assignment.Requests {
+					upl := make([]*RequestUpload, 0)
+					req.Uploads = &upl
+					db.Model(req).Association("Uploads").Find(&req.Uploads)
+					found := false
+					for _, upload := range *req.Uploads {
+						if upload.UserID == u.ID {
+							found = true
+							break
+						}
+					}
+
+					req.Complete = &found
+					req.Uploads = nil
+					u.Subjects[s].Assignments[a].Requests[r] = req
+				}
+			}
+		}
+
+		stuDashboard.Subject = u.Subjects
+
+		dashboard.Student = stuDashboard
 	}
 
 	resp.Data = dashboard
