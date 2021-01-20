@@ -32,6 +32,9 @@ func (r *RegisterUser) validate() (bool, string) {
 	if !util.ValidateEmail(r.Email) {
 		return false, "Email is invalid"
 	}
+	if len(r.Password) < 7 {
+		return false, "Password must be at least 7 characters"
+	}
 
 	return true, ""
 }

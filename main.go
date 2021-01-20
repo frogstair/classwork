@@ -27,13 +27,12 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	go Run(&wg)
+	go run(&wg)
 
 	wg.Wait()
 }
 
-// Run runs the backend server
-func Run(wg *sync.WaitGroup) {
+func run(wg *sync.WaitGroup) {
 	db := database.GetPostgres()
 	defer db.Close()
 	defer wg.Done()
@@ -45,6 +44,9 @@ func Run(wg *sync.WaitGroup) {
 	g.Use(m.Postgres)
 	g.NoRoute(pages.NotFound)
 	g.NoMethod(pages.NoMethod)
+
+	g.GET("/register", pages.ServeRegister)
+	g.Static("/static", "./web/static")
 
 	apiGroup := g.Group("/api")
 
