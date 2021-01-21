@@ -44,7 +44,9 @@ func Login(c *gin.Context) {
 	}
 
 	code, data, tok := loginuser.Login(db)
-	c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, true)
+	if code == 200 {
+		c.SetCookie("_tkn", tok, int(m.TokenValidity), "/api/", "", false, true)
+	}
 
 	c.JSON(code, data)
 }
@@ -57,14 +59,14 @@ func GenerateOTC(c *gin.Context) {
 		panic("no database variable in context")
 	}
 
-	hasPass := new(m.OTCCreate)
-	err := json.NewDecoder(c.Request.Body).Decode(hasPass)
+	otc := new(m.OTCCreate)
+	err := json.NewDecoder(c.Request.Body).Decode(otc)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := hasPass.Create(db)
+	code, resp := otc.Create(db)
 	c.JSON(code, resp)
 }
 

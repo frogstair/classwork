@@ -46,6 +46,8 @@ func run(wg *sync.WaitGroup) {
 	g.NoMethod(pages.NoMethod)
 
 	g.GET("/register", pages.ServeRegister)
+	g.GET("/login", pages.ServeLogin)
+	g.GET("/login/pass", pages.ServeLoginPassword)
 	g.Static("/static", "./web/static")
 
 	apiGroup := g.Group("/api")
@@ -55,7 +57,7 @@ func run(wg *sync.WaitGroup) {
 
 	logGroup := apiGroup.Group("/login")
 	logGroup.POST("/", api.Login)
-	logGroup.GET("/pass", api.GenerateOTC)
+	logGroup.POST("/pass", api.GenerateOTC)
 
 	regGroup := apiGroup.Group("/register")
 	regGroup.POST("/", api.Register)

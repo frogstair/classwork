@@ -118,7 +118,7 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *util.Response, string) {
 		if !util.Compare(user.Password, l.Password) {
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
-			return 500, resp, ""
+			return 403, resp, ""
 		}
 	} else {
 		if l.Code == user.OneTimeCode {
@@ -139,12 +139,12 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *util.Response, string) {
 		return 500, resp, ""
 	}
 
-	loginResponse := struct {
-		Token     string `json:"token"`
-		ExpiresIn int64  `json:"expires_in"`
-	}{user.Token, TokenValidity}
+	// loginResponse := struct {
+	// 	Token     string `json:"token"`
+	// 	ExpiresIn int64  `json:"expires_in"`
+	// }{user.Token, TokenValidity}
 
-	resp.Data = loginResponse
+	resp.Data = true
 	resp.Error = ""
 
 	return 200, resp, user.Token
