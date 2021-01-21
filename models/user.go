@@ -87,6 +87,8 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 		dashboard.Student = stuDashboard
 	}
 
+	dashboard.User = u
+
 	resp.Data = dashboard
 	resp.Error = ""
 

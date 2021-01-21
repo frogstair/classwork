@@ -57,8 +57,8 @@ func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *util.Response) {
 	}
 
 	schoolResp := struct {
-		Name string
-		ID   string
+		Name string `json:"name"`
+		ID   string `json:"id"`
 	}{n.Name, school.ID}
 
 	resp.Data = schoolResp
@@ -103,7 +103,7 @@ func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *util.Response) {
 	}
 
 	subjects := make([]*Subject, 0)
-	err = db.Where("school_id = ?", school.ID).Find(subjects).Error
+	err = db.Where("school_id = ?", school.ID).Find(&subjects).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}

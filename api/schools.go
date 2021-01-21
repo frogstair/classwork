@@ -84,11 +84,7 @@ func DeleteSchool(c *gin.Context) {
 	}
 
 	deleteSchool := new(m.DeleteSchool)
-	err := json.NewDecoder(c.Request.Body).Decode(deleteSchool)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid data"})
-		return
-	}
+	deleteSchool.ID = c.Query("id")
 
 	code, resp := deleteSchool.Delete(db, user)
 	c.JSON(code, resp)

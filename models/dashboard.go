@@ -2,6 +2,7 @@ package models
 
 // Dashboard is the user's dashboard
 type Dashboard struct {
+	User       *User                `json:"user"`
 	Headmaster *HeadmasterDashboard `json:"headmaster,omitempty"`
 	Teacher    *TeacherDashboard    `json:"teacher,omitempty"`
 	Student    *StudentDashboard    `json:"student,omitempty"`

@@ -48,6 +48,7 @@ func run(wg *sync.WaitGroup) {
 	g.GET("/register", pages.ServeRegister)
 	g.GET("/login", pages.ServeLogin)
 	g.GET("/login/pass", pages.ServeLoginPassword)
+	g.GET("/dashboard", pages.ServeDashboard)
 	g.Static("/static", "./web/static")
 
 	apiGroup := g.Group("/api")
