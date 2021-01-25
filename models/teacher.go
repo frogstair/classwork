@@ -160,6 +160,12 @@ func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
+	if !user.Has(Teacher) {
+		resp.Data = nil
+		resp.Error = "Teacher not found"
+		return 404, resp
+	}
+
 	school := new(School)
 	err = db.Where("id = ?", d.SchoolID).First(school).Error
 	if err != nil {
@@ -176,6 +182,11 @@ func (d *DeleteTeacher) Delete(db *gorm.DB) (int, *util.Response) {
 
 	if user.Perms == 0 {
 		return user.Delete(db)
+	}
+
+	err = db.Save(user).Error
+	if err != nil {
+		return util.DatabaseError(err, resp)
 	}
 
 	resp.Data = true

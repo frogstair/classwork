@@ -54,11 +54,7 @@ func GetSchool(c *gin.Context) {
 	}
 
 	schoolGetInfo := new(m.GetSchoolInfo)
-	err := json.NewDecoder(c.Request.Body).Decode(schoolGetInfo)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid data"})
-		return
-	}
+	schoolGetInfo.ID = c.Query("id")
 
 	code, resp := schoolGetInfo.GetInfo(db, user)
 	c.JSON(code, resp)

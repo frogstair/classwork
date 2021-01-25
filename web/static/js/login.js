@@ -5,7 +5,7 @@ $(() => {
     storage = window.sessionStorage;
     code = storage.getItem("_cde")
     if(code !== "_") {
-        $("password-label").text("Create a new password for your account")
+        $("#password-label").text("Create a new password for your account")
     } else {
         code = undefined
     }

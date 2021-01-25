@@ -158,6 +158,11 @@ func (d *DeleteStudent) Delete(db *gorm.DB) (int, *util.Response) {
 		return user.Delete(db)
 	}
 
+	err = db.Save(user).Error
+	if err != nil {
+		return util.DatabaseError(err, resp)
+	}
+
 	resp.Data = true
 	resp.Error = ""
 
