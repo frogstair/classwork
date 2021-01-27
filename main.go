@@ -50,6 +50,7 @@ func run(wg *sync.WaitGroup) {
 	g.GET("/login/pass", pages.ServeLoginPassword)
 	g.GET("/dashboard", pages.ServeDashboard)
 	g.GET("/school", pages.ServeSchool)
+	g.GET("/subject", pages.ServeSubject)
 	g.Static("/static", "./web/static")
 
 	apiGroup := g.Group("/api")
@@ -65,13 +66,14 @@ func run(wg *sync.WaitGroup) {
 	regGroup.POST("/", api.Register)
 	regGroup.GET("/email", api.EmailValid)
 
-	dashboardGroup := apiGroup.Group("/dashboard")
-	dashboardGroup.GET("/", m.ValidateJWT, api.GetDashboard)
+	dbdGroup := apiGroup.Group("/dashboard")
+	dbdGroup.GET("/", m.ValidateJWT, api.GetDashboard)
 
 	schGroup := apiGroup.Group("/school")
 	schGroup.POST("/", m.ValidateJWT, api.AddSchool)
 	schGroup.DELETE("/", m.ValidateJWT, api.DeleteSchool)
 	schGroup.GET("/", m.ValidateJWT, api.GetSchool)
+	schGroup.GET("/student", m.ValidateJWT, api.GetStudents)
 
 	schGroup.POST("/teacher", m.ValidateJWT, api.AddTeacher)
 	schGroup.DELETE("/teacher", m.ValidateJWT, api.DeleteTeacher)
@@ -82,6 +84,7 @@ func run(wg *sync.WaitGroup) {
 	subGroup := schGroup.Group("/subject")
 	subGroup.POST("/", m.ValidateJWT, api.AddSubject)
 	subGroup.DELETE("/", m.ValidateJWT, api.DeleteSubject)
+	subGroup.GET("/", m.ValidateJWT, api.GetSubject)
 	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
 
 	assgnGroup := subGroup.Group("/assignment")

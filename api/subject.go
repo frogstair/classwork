@@ -54,6 +54,27 @@ func DeleteSubject(c *gin.Context) {
 	c.JSON(code, resp)
 }
 
+// GetSubject gets information about a subject
+func GetSubject(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	user, ok := c.Keys["usr"].(*m.User)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no user variable in context")
+	}
+
+	getSubject := new(m.GetSubjectInfo)
+	getSubject.ID = c.Query("id")
+	getSubject.SID = c.Query("sid")
+	code, resp := getSubject.Get(db, user)
+	c.JSON(code, resp)
+}
+
 // AddStudentSubject adds a new student to a subject
 func AddStudentSubject(c *gin.Context) {
 	db, ok := c.Keys["db"].(*gorm.DB)

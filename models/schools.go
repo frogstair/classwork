@@ -224,3 +224,42 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 
 	return 200, resp
 }
+
+// GetStudents is the model to get students from the school
+type GetStudents struct {
+	ID string
+}
+
+func (g *GetStudents) clean() {
+	util.RemoveSpaces(&g.ID)
+}
+
+// Get gets the students from the school
+func (g *GetStudents) Get(db *gorm.DB) (int, *util.Response) {
+	resp := new(util.Response)
+
+	g.clean()
+
+	school := new(School)
+	err := db.Where("id = ?", g.ID).First(school).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Invalid school ID"
+			return 404, resp
+		}
+		return util.DatabaseError(err, resp)
+	}
+
+	db.Model(school).Association("Students").Find(&school.Students)
+
+	if len(school.Students) == 0 {
+		resp.Data = []*User{}
+	} else {
+		resp.Data = school.Students
+	}
+
+	resp.Error = ""
+
+	return 200, resp
+}

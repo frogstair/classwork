@@ -11,7 +11,7 @@ import (
 type Subject struct {
 	ID          string        `gorm:"primaryKey" json:"id"`
 	TeacherID   string        `gorm:"not null" json:"teacher_id"`
-	Teacher     *User         `gorm:"not null" json:"teacher"`
+	Teacher     *User         `gorm:"not null" json:"teacher,omitempty"`
 	SchoolID    string        `gorm:"not null" json:"school_id"`
 	Name        string        `gorm:"not null" json:"name"`
 	Students    []*User       `gorm:"many2many:subject_students" json:"students,omitempty"`
@@ -278,4 +278,95 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 	resp.Error = ""
 
 	return 201, resp
+}
+
+// GetSubjectInfo is the internal model to retreive a subject's info
+type GetSubjectInfo struct {
+	ID  string
+	SID string
+}
+
+// Get gets info about the subject
+func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
+
+	subject := new(Subject)
+	err := db.Where("id = ?", g.ID).First(subject).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "Unknown subject ID"
+			return 404, resp
+		}
+		return util.DatabaseError(err, resp)
+	}
+
+	if user.Has(Teacher) {
+		if subject.TeacherID != user.ID {
+			resp.Data = nil
+			resp.Error = "forbidden"
+			return 403, resp
+		}
+
+		db.Model(subject).Association("Students").Find(&subject.Students)
+
+		db.Where("subject_id = ?", g.ID).Find(&subject.Assignments)
+		for a, assignment := range subject.Assignments {
+			db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+			for _, req := range assignment.Requests {
+				upl := make([]*RequestUpload, 0)
+				req.Uploads = &upl
+				db.Model(req).Association("Uploads").Find(&req.Uploads)
+				req.Complete = nil
+			}
+
+			assignment.CompletedBy = []*User{}
+
+			complMap := make(map[string]int)
+
+			for _, request := range assignment.Requests {
+				for _, upload := range *request.Uploads {
+					complMap[upload.UserID]++
+				}
+			}
+
+			for user, completed := range complMap {
+				if completed == len(assignment.Requests) {
+					u := new(User)
+					db.Where("id = ?", user).Find(u)
+					assignment.CompletedBy = append(assignment.CompletedBy, u)
+				}
+			}
+
+			subject.Assignments[a] = assignment
+		}
+
+		getStudents := new(GetStudents)
+		getStudents.ID = g.SID
+		code, students := getStudents.Get(db)
+
+		if code != 200 {
+			return code, students
+		}
+
+		response := struct {
+			S  *Subject `json:"subject"`
+			St []*User  `json:"students"`
+		}{
+			subject,
+			students.Data.([]*User),
+		}
+
+		resp.Data = response
+		resp.Error = ""
+
+	} else if user.Has(Student) {
+
+	} else {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
+
+	return 200, resp
 }

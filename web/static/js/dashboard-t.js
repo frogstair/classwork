@@ -45,7 +45,7 @@ function subjectTemplate(id, name) {
     <div class="col-sm-4 mt-4 mb-4">
         <div class="row mb-2">
           <div class="col">
-            <button onclick="manageSchool('${id}')" class="btn btn-primary">Manage</button>
+            <button onclick="manageSubject('${id}')" class="btn btn-primary">Manage</button>
           </div>
         </div>
         <div class="row">
@@ -68,4 +68,10 @@ function deleteSubject(id) {
     .catch((err) => {
       $("#errors").val(err.response.data.error);
     });
+}
+
+function manageSubject(id) {
+  window.localStorage.setItem("_sbj", id)
+  window.localStorage.setItem("_sch", dashboard.teacher.school_id)
+  window.location.href = "/subject";
 }

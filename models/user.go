@@ -70,6 +70,7 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 			u.Subjects[s] = subject
 			for a, assignment := range subject.Assignments {
 				db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+				assignment.CompletedBy = []*User{}
 				u.Subjects[s].Assignments[a] = assignment
 				for r, req := range assignment.Requests {
 					upl := make([]*RequestUpload, 0)

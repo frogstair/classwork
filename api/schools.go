@@ -85,3 +85,29 @@ func DeleteSchool(c *gin.Context) {
 	code, resp := deleteSchool.Delete(db, user)
 	c.JSON(code, resp)
 }
+
+// GetStudents will get the students from a school
+func GetStudents(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	user, ok := c.Keys["usr"].(*m.User)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no user variable in context")
+	}
+
+	if user.Has(m.Student) {
+		c.JSON(403, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
+	getStudents := new(m.GetStudents)
+	getStudents.ID = c.Query("id")
+
+	code, res := getStudents.Get(db)
+	c.JSON(code, res)
+}

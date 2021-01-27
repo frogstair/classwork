@@ -36,6 +36,12 @@ func ServeSchool(c *gin.Context) {
 	c.Data(200, "text/html; charset=utf-8", data)
 }
 
+// ServeSubject serves the school page
+func ServeSubject(c *gin.Context) {
+	data, _ := ioutil.ReadFile("./web/subject.html")
+	c.Data(200, "text/html; charset=utf-8", data)
+}
+
 // NotFound serves the not found response
 func NotFound(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "not found"})
