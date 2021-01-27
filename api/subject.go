@@ -48,11 +48,7 @@ func DeleteSubject(c *gin.Context) {
 	}
 
 	deleteSubject := new(m.DeleteSubject)
-	err := json.NewDecoder(c.Request.Body).Decode(deleteSubject)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid data"})
-		return
-	}
+	deleteSubject.ID = c.Query("id")
 
 	code, resp := deleteSubject.Delete(db, user)
 	c.JSON(code, resp)

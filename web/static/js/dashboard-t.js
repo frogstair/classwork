@@ -1,10 +1,11 @@
-function addSchool() {
+function addSubject() {
   data = {
-    name: $("#school-name").val(),
+    name: $("#subject-name").val(),
+    school_id: dashboard.teacher.school_id,
   };
 
-  $("#schooladder").addClass("disabled");
-  $("#schooladder").prepend(
+  $("#subjectadder").addClass("disabled");
+  $("#subjectadder").prepend(
     $(
       '<span id="waiter" class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>'
     )
@@ -12,28 +13,28 @@ function addSchool() {
   $("#plus").remove();
 
   axios
-    .post("/api/school", data)
+    .post("/api/school/subject", data)
     .then((res) => {
-      var school = res.data.data;
-      template = schoolTemplate(school.id, school.name);
+      var subject = res.data.data;
+      template = subjectTemplate(subject.id, subject.name);
       $("#title").after($(template));
       $("#errors").val("");
-      $("#school-name").val("");
-      $("#schooladder").removeClass("disabled");
-      $("#school-name").removeClass("border-danger");
-      $("#schooladder").append(`<i id="plus" class="fas fa-plus"></i>`);
+      $("#subject-name").val("");
+      $("#subjectadder").removeClass("disabled");
+      $("#subject-name").removeClass("border-danger");
+      $("#subjectadder").append(`<i id="plus" class="fas fa-plus"></i>`);
       $("#waiter").remove();
     })
     .catch((err) => {
-      $("#school-name").addClass("border-danger");
+      $("#subject-name").addClass("border-danger");
       $("#errors").val(err.response.data.error);
-      $("#schooladder").removeClass("disabled");
-      $("#schooladder").append(`<i id="plus" class="fas fa-plus"></i>`);
+      $("#subjectadder").removeClass("disabled");
+      $("#subjectadder").append(`<i id="plus" class="fas fa-plus"></i>`);
       $("#waiter").remove();
     });
 }
 
-function schoolTemplate(id, name) {
+function subjectTemplate(id, name) {
   return `<div id="${id}" class="card mb-3">
   <div class="row g-0">
     <div class="col-sm-8">
@@ -49,7 +50,7 @@ function schoolTemplate(id, name) {
         </div>
         <div class="row">
           <div class="col">
-              <button onclick="deleteSchool('${id}')" class="btn btn-primary">Delete</button>
+              <button onclick="deleteSubject('${id}')" class="btn btn-primary">Delete</button>
           </div>
         </div>
       </div>
@@ -58,7 +59,7 @@ function schoolTemplate(id, name) {
 </div>`;
 }
 
-function deleteSchool(id) {
+function deleteSubject(id) {
   axios
     .delete("/api/school/subject?id=" + encodeURI(id))
     .then(() => {
@@ -67,9 +68,4 @@ function deleteSchool(id) {
     .catch((err) => {
       $("#errors").val(err.response.data.error);
     });
-}
-
-function manageSchool(id) {
-  window.localStorage.setItem("_sch", id);
-  window.location.href = "/school";
 }

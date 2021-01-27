@@ -130,6 +130,9 @@ func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
+	subject.Teacher = new(User)
+	db.Model(subject).Association("Teacher").Find(&subject.Teacher)
+
 	if subject.Teacher.ID != user.ID {
 		resp.Data = nil
 		resp.Error = "forbidden"
@@ -137,7 +140,7 @@ func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *util.Response) {
 	}
 
 	school := new(School)
-	err = db.Where("id = ?", school.ID).First(school).Error
+	err = db.Where("id = ?", subject.SchoolID).First(school).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}

@@ -83,7 +83,6 @@ func run(wg *sync.WaitGroup) {
 	subGroup.POST("/", m.ValidateJWT, api.AddSubject)
 	subGroup.DELETE("/", m.ValidateJWT, api.DeleteSubject)
 	subGroup.POST("/students", m.ValidateJWT, api.AddStudentSubject)
-	subGroup.DELETE("/students", m.ValidateJWT, nil)
 
 	assgnGroup := subGroup.Group("/assignment")
 	assgnGroup.POST("/", m.ValidateJWT, api.NewAssignment)

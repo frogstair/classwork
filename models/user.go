@@ -46,6 +46,14 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 	if u.Has(Teacher) {
 		tchDashboard := new(TeacherDashboard)
 
+		result := struct {
+			SchoolID  string
+			TeacherID string
+		}{}
+		db.Raw("select * from school_teachers where user_id = ?", u.ID).Scan(&result)
+
+		tchDashboard.SchoolID = result.SchoolID
+
 		err := db.Where("teacher_id = ?", u.ID).Find(&tchDashboard.Subjects).Error
 		if err != nil {
 			return util.DatabaseError(err, resp)
