@@ -11,17 +11,18 @@ import (
 
 // Assignment is the internal model for assignments
 type Assignment struct {
-	ID           string            `gorm:"primaryKey" json:"id"`
-	TeacherID    string            `gorm:"not null" json:"teacher_id"`
-	Teacher      *User             `gorm:"not null" json:"teacher,omitempty"`
-	SubjectID    string            `gorm:"not null" json:"subject_id,omitempty"`
-	Name         string            `gorm:"not null" json:"name"`
-	Text         string            `json:"text"`
-	Files        []*AssignmentFile `json:"files,omitempty"`
-	TimeDue      *time.Time        `json:"time_due,omitempty"`
-	TimeAssigned *time.Time        `json:"time_assigned"`
-	Requests     []*Request        `json:"requests,omitempty"`
-	CompletedBy  []*User           `gorm:"many2many:assignments_completed" json:"comleted_by,omitempty"`
+	ID             string            `gorm:"primaryKey" json:"id"`
+	TeacherID      string            `gorm:"not null" json:"teacher_id"`
+	Teacher        *User             `gorm:"not null" json:"teacher,omitempty"`
+	SubjectID      string            `gorm:"not null" json:"subject_id,omitempty"`
+	Name           string            `gorm:"not null" json:"name"`
+	Text           string            `json:"text"`
+	Files          []*AssignmentFile `json:"files,omitempty"`
+	TimeDue        *time.Time        `json:"time_due,omitempty"`
+	TimeAssigned   *time.Time        `json:"time_assigned"`
+	Requests       []*Request        `json:"requests,omitempty"`
+	CompletedBy    []*User           `gorm:"many2many:assignments_completed" json:"comleted_by,omitempty"`
+	NotCompletedBy []*User           `gorm:"-" json:"not_completed_by,omitempty"`
 }
 
 // AssignmentFile is the internal structure of a file relating to an assignment

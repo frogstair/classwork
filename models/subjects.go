@@ -310,7 +310,7 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 
 		db.Model(subject).Association("Students").Find(&subject.Students)
 
-		db.Where("subject_id = ?", g.ID).Find(&subject.Assignments)
+		db.Where("subject_id = ?", g.ID).Order("time_assigned desc").Limit(10).Find(&subject.Assignments)
 		for a, assignment := range subject.Assignments {
 			db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 			for _, req := range assignment.Requests {
@@ -320,21 +320,17 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 				req.Complete = nil
 			}
 
-			assignment.CompletedBy = []*User{}
+			db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
 
-			complMap := make(map[string]int)
-
-			for _, request := range assignment.Requests {
-				for _, upload := range *request.Uploads {
-					complMap[upload.UserID]++
-				}
+			completed := make(map[string]bool)
+			for _, compl := range assignment.CompletedBy {
+				completed[compl.ID] = true
 			}
 
-			for user, completed := range complMap {
-				if completed == len(assignment.Requests) {
-					u := new(User)
-					db.Where("id = ?", user).Find(u)
-					assignment.CompletedBy = append(assignment.CompletedBy, u)
+			assignment.NotCompletedBy = make([]*User, 0)
+			for _, student := range subject.Students {
+				if _, ok := completed[student.ID]; !ok {
+					assignment.NotCompletedBy = append(assignment.NotCompletedBy, student)
 				}
 			}
 
