@@ -3,6 +3,12 @@ var assignment;
 var selected = 0;
 
 $(() => {
+  var role = window.localStorage.getItem("_rol");
+  if (role != "nqrOzz0jmxA=") {
+    $("#t").remove();
+    return;
+  }
+
   $("#waiter").show();
   $("#content").hide();
 
@@ -39,6 +45,20 @@ function loadWorkspace() {
   $("#assigned").text("Assigned " + time_assigned);
   $("#due").text("Due " + time_due);
 
+  if (assignment.files.length != 0) {
+    $("#files").append("<hr/><h4>Files</h4>")
+    assignment.files.forEach((file, index) => {
+      $("#files").append(`
+      <a
+        style="max-width: 18em"
+        class="btn btn-primary"
+        href="${file.path}"
+        download="${assignment.name.replace(/\s/g, "_")}_${file.name}"
+        >File ${index + 1}</a
+      >`)
+    })
+  }
+
   if (assignment.requests) {
     var index = -1;
     assignment.requests.forEach((request) => {
@@ -66,7 +86,6 @@ function loadWorkspace() {
 }
 
 function updateSelection() {
-
   $("#uploads").empty();
 
   var request = assignment.requests[selected];
@@ -76,7 +95,8 @@ function updateSelection() {
         upload.user.first_name + upload.user.last_name + "_" + upload.filename
       }`;
 
-      $("#uploads").append($(`<div class="card">
+      $("#uploads").append(
+        $(`<div class="card">
       <div class="card-body">
         <h5 id="req-name" class="card-title"></h5>
         <div class="card mb-3">
@@ -96,10 +116,12 @@ function updateSelection() {
           </div>
         </div>
       </div>
-    </div>`));
+    </div>`)
+      );
     });
   } else {
-    $("#uploads").append($(`<div class="card">
+    $("#uploads").append(
+      $(`<div class="card">
     <div class="card-body">
       <h5 id="req-name" class="card-title"></h5>
       <div class="card mb-3">
@@ -108,13 +130,13 @@ function updateSelection() {
         </div>
       </div>
     </div>
-  </div>`));
+  </div>`)
+    );
   }
   $("#req-name").text(request.name);
 }
 
-
 function select(id) {
-  selected = id
-  updateSelection()
+  selected = id;
+  updateSelection();
 }

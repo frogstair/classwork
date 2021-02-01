@@ -29,6 +29,7 @@ type Assignment struct {
 type AssignmentFile struct {
 	AssignmentID string `json:"-"`
 	Path         string `gorm:"primaryKey" json:"path"`
+	Name         string `json:"name"`
 }
 
 // Request is the model to request an upload for the students
@@ -113,7 +114,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 	names := make([]string, len(n.Files))
 
 	for i, file := range n.Files {
-		file = util.ToRelativeFPath(file)
+		file = util.ToGlobalPath(file)
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			resp.Data = nil
 			resp.Error = "Internal error"
@@ -159,6 +160,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		file := new(AssignmentFile)
 		file.AssignmentID = assignment.ID
 		file.Path = name
+		file.Name = util.ToLocalPath(name)
 
 		files[i] = file
 		db.Save(file)
@@ -234,9 +236,11 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		return 403, resp
 	}
 
+	upl := make([]*RequestUpload, 0)
+	request.Uploads = &upl
 	db.Model(request).Association("Uploads").Find(&request.Uploads)
 
-	if _, err := os.Stat(util.ToRelativeFPath(n.Filepath)); os.IsNotExist(err) {
+	if _, err := os.Stat(util.ToGlobalPath(n.Filepath)); os.IsNotExist(err) {
 		resp.Data = nil
 		resp.Error = "Internal error"
 		return 500, resp
@@ -250,9 +254,7 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	*request.Uploads = append(*request.Uploads, reqUpl)
 	err = db.Save(request).Error
 	if err != nil {
-		resp.Data = nil
-		resp.Error = "Internal error"
-		return 500, resp
+		return util.DatabaseError(err, resp)
 	}
 
 	completed := true

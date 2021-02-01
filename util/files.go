@@ -23,7 +23,12 @@ func GenerateName() string {
 	return string(r)
 }
 
-// ToRelativeFPath converts file name to filepath in file server
-func ToRelativeFPath(p string) string {
+// ToGlobalPath converts file name to filepath in file server
+func ToGlobalPath(p string) string {
 	return "files/" + p
+}
+
+// ToLocalPath converts file name to filepath in file server
+func ToLocalPath(p string) string {
+	return p[6:]
 }

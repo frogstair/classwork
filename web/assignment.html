@@ -18,7 +18,8 @@
       crossorigin="anonymous"
     ></script>
     <script src="https://momentjs.com/downloads/moment-timezone-with-data.js"></script>
-    <script src="/static/js/assignment.js"></script>
+    <script id="t" src="/static/js/assignment-t.js"></script>
+    <script id="st" src="/static/js/assignment-st.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
@@ -51,14 +52,15 @@
               <p id="text"></p>
               <small id="assigned" class="text-muted"></small><br />
               <small id="due" class="text-muted"></small>
+              <div id="files">
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div class="row">
         <div id="requests" class="col-lg-2 mb-3"></div>
-        <div id="uploads" class="col-lg-10 mb-3">
-        </div>
+        <div id="uploads" class="col-lg-10 mb-3"></div>
       </div>
     </div>
   </body>

@@ -40,13 +40,13 @@ func Run() {
 				for i := 0; i < 10; i++ {
 					time.Sleep(1 * time.Minute)
 					for _, file := range files {
-						if _, err := os.Stat(util.ToRelativeFPath(file)); os.IsNotExist(err) {
+						if _, err := os.Stat(util.ToGlobalPath(file)); os.IsNotExist(err) {
 							return
 						}
 					}
 				}
 				for _, file := range files {
-					file = util.ToRelativeFPath(file)
+					file = util.ToGlobalPath(file)
 					if _, err := os.Stat(file); os.IsNotExist(err) {
 						continue
 					}

@@ -44,7 +44,7 @@ func CreateFile(c *gin.Context) {
 		name = name + "_0" + ext
 		fname := name
 
-		name = util.ToRelativeFPath(name)
+		name = util.ToGlobalPath(name)
 
 		err = c.SaveUploadedFile(file, name)
 		if err != nil {

@@ -14,24 +14,23 @@ var upload_req = {
 };
 
 $(() => {
-  modal = new bootstrap.Modal(document.getElementById('assignmentModal'))
+  modal = new bootstrap.Modal(document.getElementById("assignmentModal"));
   $("#waiter").show();
   $("#content").hide();
 
   $("#content").on("complete", loadWorkspace);
 
-  window.localStorage.removeItem("_asn")
+  window.localStorage.removeItem("_asn");
 
   var params = {
     id: subject_id,
-    sid: school_id
-  }
+    sid: school_id,
+  };
 
   axios
-    .get(
-      "/api/school/subject/", {
-        params: params
-      })
+    .get("/api/school/subject/", {
+      params: params,
+    })
     .then((res) => {
       subject = res.data.data.subject;
       students = res.data.data.students;
@@ -50,8 +49,9 @@ $(() => {
 });
 
 function asnTemplate(id, name, date, needsUpload) {
-
-  var text = needsUpload ? `<p>Not completed by</p><div class="mb-3" id="${id}_nc"></div>` : ""
+  var text = needsUpload
+    ? `<p>Not completed by</p><div class="mb-3" id="${id}_nc"></div>`
+    : "";
 
   return `<div class="card mb-3" id="${id}">
   <div class="card-body">
@@ -62,7 +62,7 @@ function asnTemplate(id, name, date, needsUpload) {
 
     <a onclick="viewAssignment('${id}')" class="btn btn-primary">View</a>
   </div>
-</div>`
+</div>`;
 }
 
 function loadWorkspace() {
@@ -83,13 +83,13 @@ function loadWorkspace() {
   var locale = window.navigator.userLanguage || window.navigator.language;
   moment.locale(locale);
 
-  if(subject.assignments) {
+  if (subject.assignments) {
     subject.assignments.forEach((assgn) => {
       const date = moment(assgn.time_assigned).format("lll");
-      var t = asnTemplate(assgn.id, assgn.name, date, assgn.not_completed_by)
+      var t = asnTemplate(assgn.id, assgn.name, date, assgn.not_completed_by);
       $("#assignments").append($(t));
 
-      if(assgn.not_completed_by != null) {
+      if (assgn.not_completed_by != null) {
         assgn.not_completed_by.forEach((ncstd) => {
           $("#" + assgn.id + "_nc").append(
             `<span class="badge bg-danger">${
@@ -110,7 +110,6 @@ function loadWorkspace() {
       )
     );
   });
-
 }
 
 function addStudent(el) {
@@ -201,10 +200,10 @@ function uploadAssgn(data) {
   axios
     .post("/api/school/subject/assignment", data)
     .then((res) => {
-      var assgn = res.data.data
+      var assgn = res.data.data;
       var time_created = moment.tz($("#timedue").val(), moment());
       $("#assignments").append(asnTemplate(assgn.id, assgn.name, time_created));
-      modal.hide()
+      modal.hide();
     })
     .catch((err) => {
       console.error(err);
@@ -214,5 +213,6 @@ function uploadAssgn(data) {
 
 function viewAssignment(id) {
   window.localStorage.setItem("_asn", id);
-  window.location.href = "/assignment"
+  window.localStorage.setItem("_rol", "nqrOzz0jmxA=");
+  window.location.href = "/assignment";
 }

@@ -22,7 +22,6 @@ function assgnTemplate(id, name, text, subjid, remaining) {
 function viewAssgn(id, sid) {
   window.localStorage.setItem("_sub", sid);
   window.localStorage.setItem("_asn", id);
+  window.localStorage.setItem("_rol", "cNFDBScBBJ8=");
   window.location.href = "/assignment";
 }
-
-//M88ObwDDNNY05MdyglPAcjYlxLXTb9_1
