@@ -1,6 +1,6 @@
 var school_id = window.localStorage.getItem("_sch");
 
-var data;
+var schoolData;
 
 $(() => {
   if (!school_id) {
@@ -21,7 +21,7 @@ $(() => {
       params: data
     })
     .then((res) => {
-      data = res.data.data;
+      schoolData = res.data.data;
       try {
         $("#content").trigger("complete");
       } catch (err) {
@@ -36,28 +36,28 @@ $(() => {
 });
 
 function loadWorkspace() {
-  $("#school_name").text(data.name);
+  $("#school_name").text(schoolData.name);
 
-  if (!data.teachers) {
+  if (!schoolData.teachers) {
     $("#teacher-form").before($("<h5 id='teacher-heading'>No teachers!</h5>"));
   } else {
     $("#teacher-form").before(
       $(`<ul id="teacher-list" class="list-group mb-2"></ul>`)
     );
-    data.teachers.forEach((t) => {
+    schoolData.teachers.forEach((t) => {
       $("#teacher-list").append(
         $(template("teacher", t.id, t.first_name + " " + t.last_name))
       );
     });
   }
 
-  if (!data.students) {
+  if (!schoolData.students) {
     $("#student-form").before($("<h5 id='student-heading'>No students!</h5>"));
   } else {
     $("#student-form").before(
       $(`<ul id="student-list" class="list-group mb-2"></ul>`)
     );
-    data.students.forEach((s) => {
+    schoolData.students.forEach((s) => {
       $("#student-list").append(
         $(template("student", s.id, s.first_name + " " + s.last_name))
       );
@@ -83,7 +83,7 @@ function template(who, id, name) {
 function add(who) {
   $("#" + who + "-errors").val("");
   $("#" + who + "-add").addClass("disabled")
-  data = {
+  schoolData = {
     first_name: $("#" + who + "-fname").val(),
     last_name: $("#" + who + "-lname").val(),
     email: $("#" + who + "-email").val(),
@@ -98,7 +98,7 @@ function add(who) {
   }
 
   axios
-    .post("/api/school/" + who, data)
+    .post("/api/school/" + who, schoolData)
     .then((res) => {
       t = template(
         who,

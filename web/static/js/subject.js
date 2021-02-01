@@ -202,7 +202,8 @@ function uploadAssgn(data) {
     .post("/api/school/subject/assignment", data)
     .then((res) => {
       var assgn = res.data.data
-      $("#assignments").append(asnTemplate(assgn.id, assgn.name, date));
+      var time_created = moment.tz($("#timedue").val(), moment());
+      $("#assignments").append(asnTemplate(assgn.id, assgn.name, time_created));
       modal.hide()
     })
     .catch((err) => {

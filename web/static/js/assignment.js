@@ -66,8 +66,10 @@ function loadWorkspace() {
 }
 
 function updateSelection() {
+
+  $("#uploads").empty();
+
   var request = assignment.requests[selected];
-  $("#req-name").text(request.name);
   if (request.uploads.length != 0) {
     request.uploads.forEach((upload) => {
       var downloadFile = `${
@@ -96,7 +98,19 @@ function updateSelection() {
       </div>
     </div>`));
     });
+  } else {
+    $("#uploads").append($(`<div class="card">
+    <div class="card-body">
+      <h5 id="req-name" class="card-title"></h5>
+      <div class="card mb-3">
+        <div class="card-body">
+        <h2>No submissions</h2>
+        </div>
+      </div>
+    </div>
+  </div>`));
   }
+  $("#req-name").text(request.name);
 }
 
 

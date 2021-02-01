@@ -85,7 +85,8 @@ function updateSelection() {
           <input
             type="text"
             class="form-control"
-            id="#school-name"
+            id="school-name"
+            placeholder="School name"
           />
 
           <input
