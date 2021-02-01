@@ -66,7 +66,7 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 
 		db.Model(u).Association("Subjects").Find(&u.Subjects)
 		for s, subject := range u.Subjects {
-			db.Where("subject_id = ?", subject.ID).Find(&subject.Assignments)
+			db.Where("subject_id = ?", subject.ID).Order("time_assigned desc").Limit(10).Find(&subject.Assignments)
 			u.Subjects[s] = subject
 			for a, assignment := range subject.Assignments {
 				db.Model(assignment).Association("Requests").Find(&assignment.Requests)

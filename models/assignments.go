@@ -354,6 +354,22 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 				}
 			}
 		}
+	} else {
+		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+		for r, req := range assignment.Requests {
+			upl := make([]*RequestUpload, 0)
+			assignment.Requests[r].Uploads = &upl
+			db.Model(req).Association("Uploads").Find(&assignment.Requests[r].Uploads)
+			found := false
+			for _, upload := range *assignment.Requests[r].Uploads {
+				if upload.UserID == user.ID {
+					found = true
+					break
+				}
+			}
+			req.Complete = &found
+			req.Uploads = nil
+		}
 	}
 
 	resp.Data = assignment

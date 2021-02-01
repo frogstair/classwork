@@ -72,11 +72,12 @@ function updateSelection() {
   $("#data").empty();
 
   if (selected == PERMS.Headmaster) {
-    $("#data").append($("<h1 id='title'>Headmaster</h1>"))
+    $("#data").append($("<h1 id='title'>Headmaster</h1>"));
 
     dashboard.headmaster.schools.forEach((school) => {
       template = schoolTemplate(school.id, school.name);
-      $("#data").append($(template));1
+      $("#data").append($(template));
+      1;
     });
 
     $("#data").append(
@@ -105,11 +106,12 @@ function updateSelection() {
     );
   }
   if (selected == PERMS.Teacher) {
-    $("#data").append($("<h1 id='title'>Teacher</h1>"))
+    $("#data").append($("<h1 id='title'>Teacher</h1>"));
 
     dashboard.teacher.subjects.forEach((subject) => {
       template = subjectTemplate(subject.id, subject.name);
-      $("#data").append($(template));1
+      $("#data").append($(template));
+      1;
     });
 
     $("#data").append(
@@ -136,6 +138,21 @@ function updateSelection() {
         </div>
       </div>`)
     );
+  }
+  if (selected == PERMS.Student) {
+    $("#data").append($("<h1 id='title'>Student</h1>"));
+    dashboard.student.subjects.forEach((subject) => {
+      $("#data").append($(subjTemplate(subject.id, subject.name)));
+      subject.assignments.forEach((assgn) => {
+        var remaining = 0;
+        assgn.requests.forEach((req) => {
+          if (!req.complete) remaining++;
+        });
+        $("#" + subject.id).append(
+          assgnTemplate(assgn.id, assgn.name, assgn.text, subject.id, remaining)
+        );
+      });
+    });
   }
 }
 
