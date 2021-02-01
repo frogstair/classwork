@@ -14,6 +14,8 @@ $(() => {
 
   $("#content").on("complete", loadWorkspace);
 
+  window.localStorage.clear();
+
   axios
     .get("/api/dashboard")
     .then((res) => {
@@ -39,19 +41,19 @@ function loadWorkspace() {
 
   if (dashboard.headmaster) {
     var template = `<li class="nav-item">
-            <b onclick="selectRole(1)" class="nav-link active">Headmaster</b>
+            <b onclick="selectRole(1)" class="nav-link clickable active">Headmaster</b>
         </li>`;
     $("#navbar").prepend($(template));
   }
   if (dashboard.teacher) {
     var template = `<li class="nav-item">
-            <b onclick="selectRole(2)" class="nav-link active">Teacher</b>
+            <b onclick="selectRole(2)" class="nav-link clickable active">Teacher</b>
         </li>`;
     $("#navbar").prepend($(template));
   }
   if (dashboard.student) {
     var template = `<li class="nav-item">
-            <b onclick="selectRole(3)" class="nav-link active">Student</b>
+            <b onclick="selectRole(3)" class="nav-link clickable active">Student</b>
         </li>`;
     $("#navbar").prepend($(template));
   }
@@ -82,15 +84,14 @@ function updateSelection() {
         <div class="col-10">
           <input
             type="text"
-            id="school-name"
-            class="form-control mb-1"
-            placeholder="School name"
+            class="form-control"
+            id="#school-name"
           />
 
           <input
           id="errors"
-          class="form-control"
           type="text"
+          class="form-control"
           readonly
           />
         </div>

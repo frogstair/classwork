@@ -42,8 +42,9 @@ type Request struct {
 
 // RequestUpload is the model to tracks who uploaded what
 type RequestUpload struct {
-	UserID    string `json:"user"`
-	RequestID string
+	UserID    string `json:"-"`
+	User      *User  `gorm:"-" json:"user"`
+	RequestID string `json:"-"`
 	Filepath  string `json:"file"`
 }
 
@@ -55,9 +56,7 @@ type NewAssignment struct {
 	TimeDue        *time.Time `json:"time_due"`
 	Files          []string   `json:"files"`
 	UploadRequest  bool       `json:"-"`
-	UploadRequests []struct {
-		Name string `json:"name"`
-	} `json:"uploads"`
+	UploadRequests []string   `json:"uploads"`
 }
 
 func (n *NewAssignment) clean() {
@@ -149,7 +148,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		request := new(Request)
 		request.ID = ksuid.New().String()
 		request.AssignmentID = assignment.ID
-		request.Name = uploadReq.Name
+		request.Name = uploadReq
 
 		requests[i] = request
 		db.Save(request)
@@ -166,13 +165,14 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 	}
 
 	assgn := struct {
-		ID        string            `json:"id"`
-		Name      string            `json:"name"`
-		TeacherID string            `json:"teacher_id"`
-		SubjectID string            `json:"subject_id"`
-		Files     []*AssignmentFile `json:"files"`
-		Uploads   []*Request        `json:"uploads"`
-	}{assignment.ID, assignment.Name, assignment.TeacherID, assignment.SubjectID, files, requests}
+		ID         string            `json:"id"`
+		Name       string            `json:"name"`
+		TeacherID  string            `json:"teacher_id"`
+		SubjectID  string            `json:"subject_id"`
+		AssignedAt time.Time         `json:"time_assigned"`
+		Files      []*AssignmentFile `json:"files"`
+		Uploads    []*Request        `json:"uploads"`
+	}{assignment.ID, assignment.Name, assignment.TeacherID, assignment.SubjectID, now, files, requests}
 
 	resp.Data = assgn
 	resp.Error = ""
@@ -287,4 +287,77 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	resp.Error = ""
 
 	return 202, resp
+}
+
+// GetAssignment is the model to get the assignment
+type GetAssignment struct {
+	ID string
+}
+
+// Get gets the assignment information
+func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
+	resp := new(util.Response)
+
+	assignment := new(Assignment)
+	err := db.Where("id = ?", g.ID).First(assignment).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "not found"
+			return 400, resp
+		}
+		return util.DatabaseError(err, resp)
+	}
+	db.Model(assignment).Association("Files").Find(&assignment.Files)
+
+	subject := new(Subject)
+	err = db.Where("id = ?", assignment.SubjectID).First(subject).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "not found"
+			return 400, resp
+		}
+		return util.DatabaseError(err, resp)
+	}
+	db.Model(subject).Association("Students").Find(&subject.Students)
+
+	if user.Has(Teacher) {
+		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+		for _, req := range assignment.Requests {
+			upl := make([]*RequestUpload, 0)
+			req.Uploads = &upl
+			uplBuf := make([]*RequestUpload, 0)
+			db.Model(req).Association("Uploads").Find(&req.Uploads)
+			req.Complete = nil
+
+			for _, uploads := range *req.Uploads {
+				db.Where("id = ?", uploads.UserID).First(uploads.User)
+				uplBuf = append(uplBuf, uploads)
+			}
+
+			req.Uploads = &uplBuf
+		}
+
+		db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
+
+		if assignment.TimeDue != nil {
+			completed := make(map[string]bool)
+			for _, compl := range assignment.CompletedBy {
+				completed[compl.ID] = true
+			}
+
+			assignment.NotCompletedBy = make([]*User, 0)
+			for _, student := range subject.Students {
+				if _, ok := completed[student.ID]; !ok {
+					assignment.NotCompletedBy = append(assignment.NotCompletedBy, student)
+				}
+			}
+		}
+	}
+
+	resp.Data = assignment
+	resp.Error = ""
+
+	return 200, resp
 }

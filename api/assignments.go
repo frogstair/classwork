@@ -67,3 +67,23 @@ func CompleteAssignment(c *gin.Context) {
 	code, resp := newComplete.Complete(db, user)
 	c.JSON(code, resp)
 }
+
+// GetAssignment gets information about the assignment
+func GetAssignment(c *gin.Context) {
+	db, ok := c.Keys["db"].(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no database variable in context")
+	}
+
+	user, ok := c.Keys["usr"].(*m.User)
+	if !ok {
+		c.JSON(500, gin.H{"error": "internal error"})
+		panic("no user variable in context")
+	}
+
+	gasn := new(m.GetAssignment)
+	gasn.ID = c.Query("id")
+	code, resp := gasn.Get(db, user)
+	c.JSON(code, resp)
+}

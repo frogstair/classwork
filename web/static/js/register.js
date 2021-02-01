@@ -6,8 +6,15 @@ function validateName(element) {
 
 function validateEmail(element) {
     el = $(element)
+
+    var params = {
+        email: el.val()
+    }
+
     axios
-    .get(`/api/register/email?email=${el.val()}`)
+    .get("/api/register/email", {
+        params: params
+    })
     .then((res) => {
         var valid = res.data.data
         setValid(valid, "Email is taken", el)

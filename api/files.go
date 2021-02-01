@@ -26,6 +26,10 @@ func CreateFile(c *gin.Context) {
 	files := form.File["files"]
 	names := make([]string, len(files))
 
+	if len(files) == 0 {
+		return
+	}
+
 	for _, file := range files {
 		if file.Size > 100000000 {
 			c.JSON(400, gin.H{"error": fmt.Sprintf("File %s is too large, limit is 100MB", file.Filename)})
@@ -51,11 +55,11 @@ func CreateFile(c *gin.Context) {
 
 		names[i] = fname
 	}
+	*gcChan <- names
 
 	resp := struct {
 		Files []string `json:"files"`
 	}{names}
-	*gcChan <- names
 
 	c.JSON(200, resp)
 }

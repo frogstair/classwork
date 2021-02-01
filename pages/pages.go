@@ -36,9 +36,15 @@ func ServeSchool(c *gin.Context) {
 	c.Data(200, "text/html; charset=utf-8", data)
 }
 
-// ServeSubject serves the school page
+// ServeSubject serves the subject page
 func ServeSubject(c *gin.Context) {
 	data, _ := ioutil.ReadFile("./web/subject.html")
+	c.Data(200, "text/html; charset=utf-8", data)
+}
+
+// ServeAssignment serves the assignment page
+func ServeAssignment(c *gin.Context) {
+	data, _ := ioutil.ReadFile("./web/assignment.html")
 	c.Data(200, "text/html; charset=utf-8", data)
 }
 

@@ -2,6 +2,7 @@ package garbage
 
 import (
 	"classwork/util"
+	"log"
 	"os"
 	"time"
 
@@ -30,10 +31,12 @@ func AddCollectorToContext(c *gin.Context) {
 
 // Run runs the garbage collector
 func Run() {
+	log.Println("Started garbage collector")
 	for {
 		select {
 		case f := <-fileChannel:
 			go func(files []string) {
+				defer log.Printf("Cleaned %v", files)
 				for i := 0; i < 10; i++ {
 					time.Sleep(1 * time.Minute)
 					for _, file := range files {

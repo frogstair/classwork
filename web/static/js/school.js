@@ -12,8 +12,14 @@ $(() => {
 
   $("#content").on("complete", loadWorkspace);
 
+  var data = {
+    id: school_id
+  }
+
   axios
-    .get("/api/school?id=" + encodeURI(school_id))
+    .get("/api/school", {
+      params: data
+    })
     .then((res) => {
       data = res.data.data;
       try {

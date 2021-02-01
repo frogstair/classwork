@@ -2,6 +2,7 @@ var subject;
 var students;
 var subject_id = window.localStorage.getItem("_sbj");
 var school_id = window.localStorage.getItem("_sch");
+var modal;
 
 var upload_req = {
   name: "",
@@ -13,18 +14,24 @@ var upload_req = {
 };
 
 $(() => {
+  modal = new bootstrap.Modal(document.getElementById('assignmentModal'))
   $("#waiter").show();
   $("#content").hide();
 
   $("#content").on("complete", loadWorkspace);
 
+  window.localStorage.removeItem("_asn")
+
+  var params = {
+    id: subject_id,
+    sid: school_id
+  }
+
   axios
     .get(
-      "/api/school/subject/?id=" +
-        encodeURIComponent(subject_id) +
-        "&sid=" +
-        encodeURIComponent(school_id)
-    )
+      "/api/school/subject/", {
+        params: params
+      })
     .then((res) => {
       subject = res.data.data.subject;
       students = res.data.data.students;
@@ -42,7 +49,25 @@ $(() => {
     });
 });
 
+function asnTemplate(id, name, date, needsUpload) {
+
+  var text = needsUpload ? `<p>Not completed by</p><div class="mb-3" id="${id}_nc"></div>` : ""
+
+  return `<div class="card mb-3" id="${id}">
+  <div class="card-body">
+    <h5 class="card-title">${name}</h5>
+    <p class="card-text"><small class="text-muted">Assigned ${date} </small></p>
+
+    ${text}
+
+    <a onclick="viewAssignment('${id}')" class="btn btn-primary">View</a>
+  </div>
+</div>`
+}
+
 function loadWorkspace() {
+  $("#waiter").remove();
+  $("#content").show();
   $("#name").text(subject.name);
 
   try {
@@ -58,34 +83,23 @@ function loadWorkspace() {
   var locale = window.navigator.userLanguage || window.navigator.language;
   moment.locale(locale);
 
-  try {
+  if(subject.assignments) {
     subject.assignments.forEach((assgn) => {
-
       const date = moment(assgn.time_assigned).format("lll");
+      var t = asnTemplate(assgn.id, assgn.name, date, assgn.not_completed_by)
+      $("#assignments").append($(t));
 
-      $("#assignments").append(
-        `<div class="card mb-3" id="${assgn.id}">
-        <div class="card-body">
-          <h5 class="card-title">${assgn.name}</h5>
-          <p class="card-text"><small class="text-muted">Assigned ${date} </small></p>
-
-          <p>Not completed by</p>
-          <div class="mb-3" id="${assgn.id}_nc">
-          </div>
-
-          <a href="#" class="btn btn-primary">View</a>
-        </div>
-      </div>`
-      );
-
-      try {
+      if(assgn.not_completed_by != null) {
         assgn.not_completed_by.forEach((ncstd) => {
-          $("#" + assgn.id + "_nc").append(`<span class="badge bg-danger">${ncstd.first_name + " " + ncstd.last_name}</span>`)
-        })
-      } catch {}
-
+          $("#" + assgn.id + "_nc").append(
+            `<span class="badge bg-danger">${
+              ncstd.first_name + " " + ncstd.last_name
+            }</span>`
+          );
+        });
+      }
     });
-  } catch {}
+  }
 
   students.forEach((student) => {
     $("#students_select").append(
@@ -97,8 +111,6 @@ function loadWorkspace() {
     );
   });
 
-  $("#waiter").remove();
-  $("#content").show();
 }
 
 function addStudent(el) {
@@ -110,18 +122,19 @@ function addStudent(el) {
     subject_id: subject_id,
   };
 
-  axios.post("/api/school/subject/students", data)
-  .then((res) => {
-    student = res.data.data
-    $("#students").append(
-      `<li value="${student.id}" class="list-group-item">${
-        student.first_name + " " + student.last_name
-      }</li>`
-    );
-  })
-  .catch((err) => {
-    $("#errors").val(err.response.data.error);
-  });
+  axios
+    .post("/api/school/subject/students", data)
+    .then((res) => {
+      student = res.data.data;
+      $("#students").append(
+        `<li value="${student.id}" class="list-group-item">${
+          student.first_name + " " + student.last_name
+        }</li>`
+      );
+    })
+    .catch((err) => {
+      $("#errors").val(err.response.data.error);
+    });
 }
 
 function addUploadRequest() {
@@ -169,15 +182,9 @@ function addAssignment() {
     })
     .then((res) => {
       upload_req.files = res.data.files;
-      upload_req.name = $("#asg_name").val();
+      upload_req.name = $("#asn_name").val();
       upload_req.subject_id = subject_id;
       upload_req.text = $("#text").val();
-
-      moment.tz.load({
-        zones: [],
-        links: [],
-        version: "2014e",
-      });
 
       var time_due = moment.tz($("#timedue").val(), moment.tz.guess());
 
@@ -186,15 +193,25 @@ function addAssignment() {
     })
     .catch((err) => {
       console.error(err);
-      $("#errors_asg").val(err.response.data.error);
+      $("#errors_asn").val(err.response.data.error);
     });
 }
 
 function uploadAssgn(data) {
-  axios.post("/api/school/subject/assignment", data).then((res) => {
-    console.log(res);
-  })
-  .catch((res) => {
+  axios
+    .post("/api/school/subject/assignment", data)
+    .then((res) => {
+      var assgn = res.data.data
+      $("#assignments").append(asnTemplate(assgn.id, assgn.name, date));
+      modal.hide()
+    })
+    .catch((err) => {
+      console.error(err);
+      $("#errors_asn").val(err.response.data.error);
+    });
+}
 
-  });
+function viewAssignment(id) {
+  window.localStorage.setItem("_asn", id);
+  window.location.href = "/assignment"
 }

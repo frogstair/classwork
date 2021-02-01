@@ -322,15 +322,17 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 
 			db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
 
-			completed := make(map[string]bool)
-			for _, compl := range assignment.CompletedBy {
-				completed[compl.ID] = true
-			}
+			if assignment.TimeDue != nil {
+				completed := make(map[string]bool)
+				for _, compl := range assignment.CompletedBy {
+					completed[compl.ID] = true
+				}
 
-			assignment.NotCompletedBy = make([]*User, 0)
-			for _, student := range subject.Students {
-				if _, ok := completed[student.ID]; !ok {
-					assignment.NotCompletedBy = append(assignment.NotCompletedBy, student)
+				assignment.NotCompletedBy = make([]*User, 0)
+				for _, student := range subject.Students {
+					if _, ok := completed[student.ID]; !ok {
+						assignment.NotCompletedBy = append(assignment.NotCompletedBy, student)
+					}
 				}
 			}
 

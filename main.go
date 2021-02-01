@@ -51,6 +51,7 @@ func run(wg *sync.WaitGroup) {
 	g.GET("/dashboard", pages.ServeDashboard)
 	g.GET("/school", pages.ServeSchool)
 	g.GET("/subject", pages.ServeSubject)
+	g.GET("/assignment", pages.ServeAssignment)
 	g.Static("/static", "./web/static")
 
 	apiGroup := g.Group("/api")
@@ -89,6 +90,7 @@ func run(wg *sync.WaitGroup) {
 
 	assgnGroup := subGroup.Group("/assignment")
 	assgnGroup.POST("/", m.ValidateJWT, api.NewAssignment)
+	assgnGroup.GET("/", m.ValidateJWT, api.GetAssignment)
 	assgnGroup.POST("/complete", m.ValidateJWT, api.CompleteAssignment)
 
 	g.Use(garbage.AddCollectorToContext)
