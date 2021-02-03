@@ -45,7 +45,7 @@ function loadWorkspaceSt() {
   $("#assigned").text("Assigned " + time_assigned);
   $("#due").text("Due " + time_due);
 
-  if (assignment.files.length != 0) {
+  if (assignment.files) {
     $("#files").append("<hr/><h4>Files</h4>");
     assignment.files.forEach((file, index) => {
       $("#files").append(`
@@ -60,20 +60,18 @@ function loadWorkspaceSt() {
   }
 
   if (assignment.requests) {
-    var index = -1;
     assignment.requests.forEach((request) => {
       if (request.complete) return;
-      index++;
       $("#uploads").append(
         $(`
-            <div class="card mb-3">
+            <div id="${request.id}" class="card mb-3">
               <div class="card-body">
                 <div class="row">
                   <div class="col-lg-3">
                     <h5 class="card-title">${request.name}</h5>
                   </div>
                   <div class="col-lg-9">
-                    <input onchange="completeReq('${request.id}')" id="file" class="form-control" type="file" id="uploadFile"/>
+                    <input onchange="completeReq('${request.id}', this)" id="file" class="form-control" type="file" id="uploadFile"/>
                   </div>
                 </div>
               </div>
@@ -86,9 +84,9 @@ function loadWorkspaceSt() {
   $("#content").show();
 }
 
-function completeReq(id) {
+function completeReq(id, el) {
   var formData = new FormData();
-  var files = $("#file").prop("files");
+  var files = $(el).prop("files");
   $.each(files, (_, file) => {
     formData.append("files", file);
   });
@@ -114,7 +112,13 @@ function markComplete(id, file) {
     filepath: file,
   };
 
-  axios.post("/api/school/subject/assignment/complete", data).catch((err) => {
+  axios.post("/api/school/subject/assignment/complete", data)
+  .then((res) => {
+    if(res.data.data) {
+      $("#" + id).remove()
+    }
+  })
+  .catch((err) => {
     alert(err.response.data.error);
   });
 }

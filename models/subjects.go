@@ -315,7 +315,7 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 			db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 			for _, req := range assignment.Requests {
 				upl := make([]*RequestUpload, 0)
-				req.Uploads = &upl
+				req.Uploads = upl
 				db.Model(req).Association("Uploads").Find(&req.Uploads)
 				req.Complete = nil
 			}

@@ -34,19 +34,20 @@ type AssignmentFile struct {
 
 // Request is the model to request an upload for the students
 type Request struct {
-	ID           string            `gorm:"primaryKey" json:"id"`
-	AssignmentID string            `json:"-"`
-	Name         string            `gorm:"not null" json:"name"`
-	Complete     *bool             `gorm:"-" json:"complete,omitempty"`
-	Uploads      *[]*RequestUpload `json:"uploads,omitempty"`
+	ID           string           `gorm:"primaryKey" json:"id"`
+	AssignmentID string           `json:"-"`
+	Name         string           `gorm:"not null" json:"name"`
+	Complete     *bool            `gorm:"-" json:"complete,omitempty"`
+	Uploads      []*RequestUpload `json:"uploads,omitempty"`
 }
 
 // RequestUpload is the model to tracks who uploaded what
 type RequestUpload struct {
+	RequestID string `json:"-"`
 	UserID    string `json:"-"`
 	User      *User  `gorm:"-" json:"user"`
-	RequestID string `json:"-"`
-	Filepath  string `json:"file"`
+	Filepath  string `json:"path"`
+	Filename  string `json:"name"`
 }
 
 // NewAssignment is a model to create a new assignment
@@ -185,11 +186,11 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 // NewRequestComplete is a model to complete an upload request
 type NewRequestComplete struct {
 	RequestID string `json:"request_id"`
-	Filepath  string `json:"filepath"`
+	Filename  string `json:"filepath"`
 }
 
 func (n *NewRequestComplete) clean() {
-	util.RemoveSpaces(&n.Filepath)
+	util.RemoveSpaces(&n.Filename)
 	util.RemoveSpaces(&n.RequestID)
 }
 
@@ -216,6 +217,8 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		return util.DatabaseError(err, resp)
 	}
 
+	db.Model(assgn).Association("Requests").Find(&assgn.Requests)
+
 	subj := new(Subject)
 	err = db.Where("id = ?", assgn.SubjectID).First(subj).Error
 	if err != nil {
@@ -236,23 +239,28 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		return 403, resp
 	}
 
-	upl := make([]*RequestUpload, 0)
-	request.Uploads = &upl
 	db.Model(request).Association("Uploads").Find(&request.Uploads)
+	for _, upl := range request.Uploads {
+		if upl.UserID == user.ID {
+			resp.Data = nil
+			resp.Error = "file already uploaded"
+			return 409, resp
+		}
+	}
 
-	if _, err := os.Stat(util.ToGlobalPath(n.Filepath)); os.IsNotExist(err) {
+	if _, err := os.Stat(util.ToGlobalPath(n.Filename)); os.IsNotExist(err) {
 		resp.Data = nil
 		resp.Error = "Internal error"
 		return 500, resp
 	}
 
 	reqUpl := new(RequestUpload)
-	reqUpl.Filepath = n.Filepath
+	reqUpl.Filepath = util.ToGlobalPath(n.Filename)
+	reqUpl.Filename = n.Filename
 	reqUpl.RequestID = request.ID
 	reqUpl.UserID = user.ID
 
-	*request.Uploads = append(*request.Uploads, reqUpl)
-	err = db.Save(request).Error
+	err = db.Create(reqUpl).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
@@ -263,7 +271,7 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	for _, req := range assgn.Requests {
 		db.Model(req).Association("Uploads").Find(&req.Uploads)
 		found := false
-		for _, upload := range *req.Uploads {
+		for _, upload := range req.Uploads {
 			if upload.UserID == user.ID {
 				found = true
 				break
@@ -276,12 +284,9 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 	}
 
 	if completed {
-		assgn.CompletedBy = append(assgn.CompletedBy, user)
-		err = db.Save(assgn).Error
+		err = db.Exec("insert into assignments_completed(assignment_id, user_id) values (?, ?);", assgn.ID, user.ID).Error
 		if err != nil {
-			resp.Data = nil
-			resp.Error = "Internal error"
-			return 500, resp
+			return util.DatabaseError(err, resp)
 		}
 	}
 
@@ -328,17 +333,19 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 		for _, req := range assignment.Requests {
 			upl := make([]*RequestUpload, 0)
-			req.Uploads = &upl
+			req.Uploads = upl
 			uplBuf := make([]*RequestUpload, 0)
 			db.Model(req).Association("Uploads").Find(&req.Uploads)
 			req.Complete = nil
 
-			for _, uploads := range *req.Uploads {
-				db.Where("id = ?", uploads.UserID).First(uploads.User)
+			for _, uploads := range req.Uploads {
+				u := new(User)
+				db.Where("id = ?", uploads.UserID).First(u)
+				uploads.User = u
 				uplBuf = append(uplBuf, uploads)
 			}
 
-			req.Uploads = &uplBuf
+			req.Uploads = uplBuf
 		}
 
 		db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
@@ -359,11 +366,9 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 	} else {
 		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 		for r, req := range assignment.Requests {
-			upl := make([]*RequestUpload, 0)
-			assignment.Requests[r].Uploads = &upl
 			db.Model(req).Association("Uploads").Find(&assignment.Requests[r].Uploads)
 			found := false
-			for _, upload := range *assignment.Requests[r].Uploads {
+			for _, upload := range assignment.Requests[r].Uploads {
 				if upload.UserID == user.ID {
 					found = true
 					break

@@ -74,10 +74,10 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 				u.Subjects[s].Assignments[a] = assignment
 				for r, req := range assignment.Requests {
 					upl := make([]*RequestUpload, 0)
-					req.Uploads = &upl
+					req.Uploads = upl
 					db.Model(req).Association("Uploads").Find(&req.Uploads)
 					found := false
-					for _, upload := range *req.Uploads {
+					for _, upload := range req.Uploads {
 						if upload.UserID == u.ID {
 							found = true
 							break

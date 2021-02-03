@@ -45,7 +45,7 @@ function loadWorkspace() {
   $("#assigned").text("Assigned " + time_assigned);
   $("#due").text("Due " + time_due);
 
-  if (assignment.files.length != 0) {
+  if (assignment.files) {
     $("#files").append("<hr/><h4>Files</h4>")
     assignment.files.forEach((file, index) => {
       $("#files").append(`
@@ -64,7 +64,7 @@ function loadWorkspace() {
     assignment.requests.forEach((request) => {
       index++;
       var subText =
-        request.uploads.length > 0
+        request.uploads
           ? request.uploads.length + " people submitted"
           : "Nobody submitted";
       $("#requests").append(
@@ -89,10 +89,10 @@ function updateSelection() {
   $("#uploads").empty();
 
   var request = assignment.requests[selected];
-  if (request.uploads.length != 0) {
+  if (request.uploads) {
     request.uploads.forEach((upload) => {
       var downloadFile = `${
-        upload.user.first_name + upload.user.last_name + "_" + upload.filename
+        upload.user.first_name + "_" + upload.user.last_name + "_" + upload.name
       }`;
 
       $("#uploads").append(
@@ -109,7 +109,7 @@ function updateSelection() {
               </div>
               <div class="col-lg-8">
                 <a class="btn btn-primary" href="${
-                  request.file
+                  upload.path
                 }" download="${downloadFile}">Download user file</a>
               </div>
             </div>
