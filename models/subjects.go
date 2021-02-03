@@ -188,7 +188,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 	subject := new(Subject)
 	err = db.Where("id = ?", n.Subject).First(subject).Error
 	if err != nil {
-		if util.IsDuplicateErr(err) {
+		if util.IsNotFoundErr(err) {
 			resp.Data = nil
 			resp.Error = "Invalid subject id"
 			return 400, resp
@@ -262,7 +262,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	user.Subjects = append(user.Subjects, subject)
+	usr.Subjects = append(usr.Subjects, subject)
 	err = db.Save(user).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
