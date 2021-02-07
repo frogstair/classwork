@@ -31,7 +31,7 @@ func GetPostgres() *gorm.DB {
 
 	db, err = gorm.Open("postgres", cstring)
 	if err != nil {
-		panic(fmt.Sprintf("===========\ncannot establish database connection: \n%s\n===========", err))
+		panic(fmt.Sprintf("\n===========\ncannot establish database connection: \n%s\n===========", err))
 	}
 	connected = true
 	//db.LogMode(false)

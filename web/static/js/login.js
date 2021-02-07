@@ -31,7 +31,7 @@ function checkEmail(el) {
             storage.setItem("_cde", "_")
             window.location.replace("/login/pass")
         } else {
-            el.addClass("border-danger")
+            $(el).addClass("border-danger")
             $("#errors").val(err.response.data.error)
         }
     })
