@@ -43,3 +43,9 @@ func GetPostgres() *gorm.DB {
 
 	return db
 }
+
+// Disconnect closes the database connection
+func Disconnect() {
+	db.Close()
+	connected = false
+}

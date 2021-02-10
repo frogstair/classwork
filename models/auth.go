@@ -139,11 +139,6 @@ func (l *LoginUser) Login(db *gorm.DB) (int, *util.Response, string) {
 		return 500, resp, ""
 	}
 
-	// loginResponse := struct {
-	// 	Token     string `json:"token"`
-	// 	ExpiresIn int64  `json:"expires_in"`
-	// }{user.Token, TokenValidity}
-
 	resp.Data = true
 	resp.Error = ""
 

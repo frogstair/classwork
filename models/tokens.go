@@ -1,10 +1,13 @@
 package models
 
 import (
+	"classwork/util"
+	"log"
 	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
 )
 
 // Role is a type alias for a role a user can have
@@ -37,4 +40,49 @@ func CreateToken(id string) string {
 	tokenString, _ := jwtToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
 
 	return tokenString
+}
+
+// ParseToken parses a token and returns the associated user
+func ParseToken(tokstr string, db *gorm.DB) (int, *util.Response) {
+
+	resp := new(util.Response)
+
+	tok := &Token{}
+	token, err := jwt.ParseWithClaims(tokstr, tok,
+		func(t *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("JWT_SECRET")), nil
+		})
+
+	if !token.Valid {
+		if err != nil {
+			resp.Data = nil
+			resp.Error = "token is invalid"
+
+			return 401, resp
+		}
+	}
+
+	user := new(User)
+	err = db.Where("id = ?", tok.ID).First(user).Error
+	if err != nil {
+		if util.IsNotFoundErr(err) {
+			resp.Data = nil
+			resp.Error = "token does not correspond to user"
+
+			return 401, resp
+		}
+		log.Printf("Database error: %s\n", err.Error())
+		return util.DatabaseError(err, resp)
+	}
+
+	if user.Token != tokstr {
+		resp.Data = nil
+		resp.Error = "token does not correspond to user"
+
+		return 401, resp
+	}
+
+	resp.Data = user
+	resp.Error = ""
+	return 200, resp
 }

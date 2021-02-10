@@ -22,7 +22,7 @@ func init() {
 func TestCreateUser(t *testing.T) {
 
 	db := database.GetPostgres()
-	defer db.Close()
+	defer database.Disconnect()
 
 	type user struct {
 		email string
@@ -91,13 +91,13 @@ func TestCreateUser(t *testing.T) {
 		}
 
 		code, resp := rUser.Register(db)
-		if code-code%100 != 200 {
+		if code != 201 {
 			if c.passes {
 				t.Fatalf("Test case %d: error %s", i, resp.Error)
 			}
 			return
 		}
-		if code-code%100 == 200 && !c.passes {
+		if code == 201 && !c.passes {
 			t.Fatalf("Test case %d: error %s", i, "test succeeded when shouldnt have")
 		}
 
