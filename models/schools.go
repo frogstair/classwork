@@ -14,7 +14,7 @@ type School struct {
 	Name     string     `gorm:"not null" json:"name"`
 	Students []*User    `gorm:"many2many:school_students" json:"students,omitempty"`
 	Teachers []*User    `gorm:"many2many:school_teachers" json:"teachers,omitempty"`
-	Subjects []*Subject `gorm:"many2many:school_subjects" json:"subjects,omitempty"`
+	Subjects []*Subject `json:"subjects,omitempty"`
 }
 
 // NewSchool is the model to add a new school

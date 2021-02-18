@@ -66,6 +66,13 @@ func (n *NewStudent) Add(db *gorm.DB) (int, *util.Response) {
 	}
 
 	if found {
+
+		if user.Has(Student) {
+			resp.Data = nil
+			resp.Error = "User already a student"
+			return 409, resp
+		}
+
 		user.Perms |= Student
 		school.Students = append(school.Students, user)
 
