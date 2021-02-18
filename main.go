@@ -17,34 +17,37 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	err := godotenv.Load() // Load all values from the .env file
+	if err != nil {        // If an error occurred then exit
 		log.Fatalln("Could not find .env file!")
 	}
 
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano()) // Seed random number generator
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg := sync.WaitGroup{} // Create a waitgroup to run everything asynchronously
+	wg.Add(1)              // Only one function will be running asynchronously
 
-	go run(&wg)
+	go run(&wg) // Run the function
 
-	wg.Wait()
+	wg.Wait() // Wait for the program to exit
 }
 
 func run(wg *sync.WaitGroup) {
-	db := database.GetPostgres()
-	defer db.Close()
-	defer wg.Done()
-	defer func() { garbage.Quit <- true }()
+	db := database.GetPostgres()            // Get a database connection
+	defer db.Close()                        // Close the database connection when the function returns
+	defer wg.Done()                         // Mark the function as done when the function returns
+	defer func() { garbage.Quit <- true }() // Quit the GC once the program exits
 
-	gin.SetMode(gin.ReleaseMode)
-	g := gin.New()
-	g.Use(gin.Recovery())
-	g.Use(m.Postgres)
+	gin.SetMode(gin.ReleaseMode) // Set gin's mode to release to remove any logs
+	g := gin.New()               // Create a new router
+	g.Use(gin.Recovery())        // Use the recovery middleware to recover from functions that may have crashed
+	g.Use(m.Postgres)            // Use the postgres middleware to inject the database connection into every function
 	g.NoRoute(pages.NotFound)
 	g.NoMethod(pages.NoMethod)
 
+	// Create routes to serve all the html pages
+	// Could have made a smarter system than that
+	// but it created router conflict
 	g.GET("/register", pages.ServeRegister)
 	g.GET("/login", pages.ServeLogin)
 	g.GET("/login/pass", pages.ServeLoginPassword)
@@ -54,6 +57,7 @@ func run(wg *sync.WaitGroup) {
 	g.GET("/assignment", pages.ServeAssignment)
 	g.Static("/static", "./web/static")
 
+	// All the API routes and their handlers
 	apiGroup := g.Group("/api")
 
 	logoutGroup := apiGroup.Group("/logout")
@@ -101,9 +105,12 @@ func run(wg *sync.WaitGroup) {
 	fsgroup := g.Group("/files")
 	fsgroup.POST("/", api.CreateFile)
 
+	// Get the address and port from the environment
 	address, port := os.Getenv("ADDRESS"), os.Getenv("PORT")
 
+	// Print a log
 	log.Printf("Running on %s:%s\n", address, port)
 
+	// Run the server
 	g.Run(address + ":" + port)
 }
