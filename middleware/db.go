@@ -9,7 +9,7 @@ import (
 
 // Postgres attaches a database variable to a given context
 func Postgres(c *gin.Context) {
-	db := database.GetPostgres()
-	c.Set("db", db)
+	db := database.GetPostgres() // Get existing connection/establish new connection
+	c.Set("db", db)              // Set context variable
 	c.Next()
 }
