@@ -123,10 +123,6 @@ type GetSchoolInfo struct {
 	ID string `json:"id"`
 }
 
-func (g *GetSchoolInfo) clean() {
-	util.RemoveSpaces(&g.ID)
-}
-
 // GetInfo gets the info for a school
 func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 

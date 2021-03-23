@@ -41,20 +41,20 @@ func (r *RegisterUser) validate() (bool, string) {
 
 // Register registers the user intp the database
 func (r *RegisterUser) Register(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Response placeholder
 
-	r.clean()
-	valid, reason := r.validate()
+	r.clean()                     // Remove trailing whitespace and invalid characters
+	valid, reason := r.validate() // Validate the input, and if invalid get reason
 	if !valid {
 		resp.Data = nil
 		resp.Error = reason
 		return 400, resp
 	}
 
-	hashed := util.Hash(r.Password)
-	user := new(User)
+	hashed := util.Hash(r.Password) // Hash the user's password
+	user := new(User)               // Create a user placeholder
 
-	user.ID = ksuid.New().String()
+	user.ID = ksuid.New().String() // Create a GUID and fill in user information
 	user.Email = r.Email
 	user.FirstName = r.FirstName
 	user.LastName = r.LastName
@@ -62,8 +62,8 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *util.Response) {
 	user.Perms = Headmaster
 	user.PassSet = true
 
-	err := db.Create(user).Error
-	if err != nil {
+	err := db.Create(user).Error // Create the user in the database
+	if err != nil {              // If an error occured
 		if util.IsDuplicateErr(err) {
 			resp.Data = nil
 			resp.Error = "Email is taken"
@@ -72,7 +72,7 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	userResponse := struct {
+	userResponse := struct { // Create a response for the user
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		ID        string `json:"id"`
@@ -81,7 +81,7 @@ func (r *RegisterUser) Register(db *gorm.DB) (int, *util.Response) {
 	resp.Data = userResponse
 	resp.Error = ""
 
-	return 201, resp
+	return 201, resp // Respond
 }
 
 // LoginUser is the model to create a token for the user
@@ -99,50 +99,51 @@ func (l *LoginUser) clean() {
 
 // Login will generate a token for the user
 func (l *LoginUser) Login(db *gorm.DB) (int, *util.Response, string) {
-	resp := new(util.Response)
-	l.clean()
+	resp := new(util.Response) // Create response placeholder
+	l.clean()                  // Clean the user input (remove trailing spaces and invalid characters)
 
 	user := new(User)
-	err := db.Where("email = ?", l.Email).First(user).Error
-	if err != nil {
-		if util.IsNotFoundErr(err) {
+	err := db.Where("email = ?", l.Email).First(user).Error // Get a user from the database with the entered email
+
+	if err != nil { // If an error occured
+		if util.IsNotFoundErr(err) { // If no user was found
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
 			return 401, resp, ""
 		}
-		_, resp = util.DatabaseError(err, resp)
+		_, resp = util.DatabaseError(err, resp) // Any other errors
 		return 500, resp, ""
 	}
 
-	if user.PassSet {
-		if !util.Compare(user.Password, l.Password) {
+	if user.PassSet { // If user already has a password
+		if !util.Compare(user.Password, l.Password) { // Check if password is correct
 			resp.Data = nil
 			resp.Error = "Invalid email or password"
 			return 403, resp, ""
 		}
-	} else {
-		if l.Code == user.OneTimeCode {
+	} else { // Check the code
+		if l.Code == user.OneTimeCode { // Create the password if the code is correct
 			user.PassSet = true
 			user.Password = util.Hash(l.Password)
 			user.OneTimeCode = ""
-		} else {
+		} else { // Otherwise return nothing
 			resp.Data = nil
 			resp.Error = "Invatid OTC"
 			return 401, resp, ""
 		}
 	}
 
-	user.Token = CreateToken(user.ID)
-	err = db.Save(user).Error
+	user.Token = CreateToken(user.ID) // Create a token for the user
+	err = db.Save(user).Error         // Save the user with the token and password
 	if err != nil {
 		_, resp = util.DatabaseError(err, resp)
 		return 500, resp, ""
 	}
 
-	resp.Data = true
+	resp.Data = true // Place success flag
 	resp.Error = ""
 
-	return 200, resp, user.Token
+	return 200, resp, user.Token // Respond with the token
 }
 
 // OTCCreate is the struct to check is a user has a password
@@ -150,40 +151,37 @@ type OTCCreate struct {
 	Email string
 }
 
-func (o *OTCCreate) clean() {
-	util.RemoveSpaces(&o.Email)
-}
-
 // Create creates an OTC for the user
 func (o *OTCCreate) Create(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
-	user := new(User)
+	resp := new(util.Response) // Response placeholder
+	user := new(User)          // User placeholder
 
-	err := db.Where("email = ?", o.Email).First(user).Error
-	if err != nil {
-		if util.IsNotFoundErr(err) {
+	err := db.Where("email = ?", o.Email).First(user).Error // Get the user
+
+	if err != nil { // Check for errors
+		if util.IsNotFoundErr(err) { // If user wasn't found
 			resp.Data = nil
 			resp.Error = "Invalid user"
-			return 403, resp
+			return 404, resp
 		}
-		return util.DatabaseError(err, resp)
+		return util.DatabaseError(err, resp) // If any other error
 	}
 
-	if user.PassSet {
+	if user.PassSet { // If the user has already tried to generate the code
 		resp.Data = nil
 		resp.Error = "resource gone"
 		return 410, resp
 	}
 
-	onetimecode := util.RandomCode()
+	onetimecode := util.RandomCode() // Generate a random code
 
-	user.OneTimeCode = onetimecode
+	user.OneTimeCode = onetimecode // Save the code until the user uses it
 	err = db.Save(user).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	resp.Data = onetimecode
+	resp.Data = onetimecode // Return the code to the user
 	resp.Error = ""
 
 	return 201, resp
