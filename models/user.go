@@ -29,50 +29,50 @@ func (u *User) Has(r Role) bool {
 
 // GetDashboard gets the users dashboard
 func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	dashboard := new(Dashboard)
+	dashboard := new(Dashboard) // Dashboard placeholder
 
-	if u.Has(Headmaster) {
-		hmDashboard := new(HeadmasterDashboard)
+	if u.Has(Headmaster) { // If the user is a headmaster
+		hmDashboard := new(HeadmasterDashboard) // Placeholder
 
-		err := db.Where("user_id = ?", u.ID).Find(&hmDashboard.Schools).Error
+		err := db.Where("user_id = ?", u.ID).Find(&hmDashboard.Schools).Error // Get all the schools the headmaster owns
 		if err != nil {
 			return util.DatabaseError(err, resp)
 		}
 
-		dashboard.Headmaster = hmDashboard
+		dashboard.Headmaster = hmDashboard // Set the dashboard
 	}
-	if u.Has(Teacher) {
+	if u.Has(Teacher) { // If the user is a teacher
 		tchDashboard := new(TeacherDashboard)
 
-		result := struct {
+		result := struct { // Result placeholder
 			SchoolID  string
 			TeacherID string
 		}{}
-		db.Raw("select * from school_teachers where user_id = ?", u.ID).Scan(&result)
+		db.Raw("select * from school_teachers where user_id = ?", u.ID).Scan(&result) // Get all the schools the teacher is in
 
 		tchDashboard.SchoolID = result.SchoolID
 
-		err := db.Where("teacher_id = ?", u.ID).Find(&tchDashboard.Subjects).Error
+		err := db.Where("teacher_id = ?", u.ID).Find(&tchDashboard.Subjects).Error // Get all the teacher subjects
 		if err != nil {
 			return util.DatabaseError(err, resp)
 		}
 
-		dashboard.Teacher = tchDashboard
+		dashboard.Teacher = tchDashboard // Set the dashboard
 	}
-	if u.Has(Student) {
+	if u.Has(Student) { // Is user is a student
 		stuDashboard := new(StudentDashboard)
 
-		db.Model(u).Association("Subjects").Find(&u.Subjects)
+		db.Model(u).Association("Subjects").Find(&u.Subjects) // Get for each subject
 		for s, subject := range u.Subjects {
 			db.Where("subject_id = ?", subject.ID).Order("time_assigned desc").Limit(10).Find(&subject.Assignments)
 			u.Subjects[s] = subject
-			for a, assignment := range subject.Assignments {
+			for a, assignment := range subject.Assignments { // Each assignment
 				db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 				assignment.CompletedBy = []*User{}
 				u.Subjects[s].Assignments[a] = assignment
-				for r, req := range assignment.Requests {
+				for r, req := range assignment.Requests { // Each upload request
 					upl := make([]*RequestUpload, 0)
 					req.Uploads = upl
 					db.Model(req).Association("Uploads").Find(&req.Uploads)
@@ -96,7 +96,7 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 		dashboard.Student = stuDashboard
 	}
 
-	dashboard.User = u
+	dashboard.User = u // Respond with dashboard
 
 	resp.Data = dashboard
 	resp.Error = ""
