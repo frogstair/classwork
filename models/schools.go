@@ -35,28 +35,28 @@ func (n *NewSchool) validate() (bool, string) {
 
 // Add adds a new school to the database
 func (n *NewSchool) Add(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Response placeholder
 
-	n.clean()
+	n.clean() // Remove trailing whitespace and etc
 
-	if valid, reason := n.validate(); !valid {
+	if valid, reason := n.validate(); !valid { // Check if valid
 		resp.Error = reason
 		resp.Data = nil
 		return 400, resp
 	}
 
-	school := new(School)
+	school := new(School) // Create placeholder
 
-	school.Name = n.Name
+	school.Name = n.Name // Set all fields
 	school.UserID = user.ID
 	school.ID = ksuid.New().String()
 
-	err := db.Save(school).Error
+	err := db.Save(school).Error // Save the school
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	schoolResp := struct {
+	schoolResp := struct { // Response struct
 		Name string `json:"name"`
 		ID   string `json:"id"`
 	}{n.Name, school.ID}
@@ -77,42 +77,42 @@ func (d *DeleteSchool) clean() {
 
 // Delete will delete a school
 func (d *DeleteSchool) Delete(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
-	d.clean()
-	school := new(School)
+	resp := new(util.Response) // Placeholder response
+	d.clean()                  // Remove trailing whitespace
+	school := new(School)      // Placeholder
 
-	err := db.Where("id = ?", d.ID).First(school).Error
+	err := db.Where("id = ?", d.ID).First(school).Error // Get school by ID
 	if err != nil {
-		if util.IsNotFoundErr(err) {
+		if util.IsNotFoundErr(err) { // if not found
 			resp.Data = nil
 			resp.Error = "Invalid school ID"
-			return 400, resp
+			return 404, resp
 		}
-		return util.DatabaseError(err, resp)
+		return util.DatabaseError(err, resp) // If other error
 	}
 
-	if school.UserID != user.ID {
+	if school.UserID != user.ID { // If the school doesn't belong to the headmaster
 		resp.Data = nil
 		resp.Error = "user does not own school"
 		return 403, resp
 	}
 
-	err = db.Delete(school).Error
+	err = db.Delete(school).Error // Delete the record
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	subjects := make([]*Subject, 0)
+	subjects := make([]*Subject, 0) // Get all subjects
 	err = db.Where("school_id = ?", school.ID).Find(&subjects).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	for _, subject := range subjects {
+	for _, subject := range subjects { // Delete each subject
 		go subject.Delete(db)
 	}
 
-	resp.Data = true
+	resp.Data = true // Return success
 	resp.Error = ""
 
 	return 200, resp

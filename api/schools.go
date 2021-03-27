@@ -11,31 +11,31 @@ import (
 
 // AddSchool adds a school
 func AddSchool(c *gin.Context) {
-	db, ok := c.Keys["db"].(*gorm.DB)
+	db, ok := c.Keys["db"].(*gorm.DB) // Get database variable from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no database variable in context")
 	}
 
-	user, ok := c.Keys["usr"].(*m.User)
+	user, ok := c.Keys["usr"].(*m.User) // Get the user to whom the school belongs
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Headmaster) {
+	if !user.Has(m.Headmaster) { // Teachers and students cant add schools
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
 
-	newSchool := new(m.NewSchool)
+	newSchool := new(m.NewSchool) // Placeholder
 	err := json.NewDecoder(c.Request.Body).Decode(newSchool)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newSchool.Add(db, user)
+	code, resp := newSchool.Add(db, user) // Call function
 	c.JSON(code, resp)
 }
 
@@ -62,27 +62,27 @@ func GetSchool(c *gin.Context) {
 
 // DeleteSchool will delete a school from the database
 func DeleteSchool(c *gin.Context) {
-	db, ok := c.Keys["db"].(*gorm.DB)
+	db, ok := c.Keys["db"].(*gorm.DB) // Database from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no database variable in context")
 	}
 
-	user, ok := c.Keys["usr"].(*m.User)
+	user, ok := c.Keys["usr"].(*m.User) // User from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Headmaster) {
+	if !user.Has(m.Headmaster) { // Teachers and students cant delete schools
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
 
-	deleteSchool := new(m.DeleteSchool)
-	deleteSchool.ID = c.Query("id")
+	deleteSchool := new(m.DeleteSchool) // Placeholder
+	deleteSchool.ID = c.Query("id")     // Get schoold ID from query
 
-	code, resp := deleteSchool.Delete(db, user)
+	code, resp := deleteSchool.Delete(db, user) // Call function
 	c.JSON(code, resp)
 }
 
