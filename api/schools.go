@@ -54,7 +54,7 @@ func GetSchool(c *gin.Context) {
 	}
 
 	schoolGetInfo := new(m.GetSchoolInfo)
-	schoolGetInfo.ID = c.Query("id")
+	schoolGetInfo.ID = c.Query("id") // Get variable from query
 
 	code, resp := schoolGetInfo.GetInfo(db, user)
 	c.JSON(code, resp)
@@ -100,7 +100,7 @@ func GetStudents(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	if user.Has(m.Student) {
+	if user.Has(m.Student) { // Students can't use this endpoint
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}

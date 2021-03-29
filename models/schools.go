@@ -126,11 +126,11 @@ type GetSchoolInfo struct {
 // GetInfo gets the info for a school
 func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
 	school := new(School)
-	err := db.Where("id = ?", g.ID).First(school).Error
-	if err != nil {
+	err := db.Where("id = ?", g.ID).First(school).Error // Get school from database
+	if err != nil {                                     // Handle errors
 		if util.IsNotFoundErr(err) {
 			resp.Data = nil
 			resp.Error = "Invalid school ID"
@@ -139,21 +139,23 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
+	// If the user isnt a headmaster and that the school doesnt belong to headmaster
+	// This check is needed because this endpoint works for all user types
 	if school.UserID != user.ID && user.Has(Headmaster) {
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
 	}
 
-	school.Teachers = make([]*User, 0)
+	school.Teachers = make([]*User, 0) // Placeholders
 	school.Students = make([]*User, 0)
 	school.Subjects = make([]*Subject, 0)
 
-	db.Model(school).Association("Teachers").Find(&school.Teachers)
+	db.Model(school).Association("Teachers").Find(&school.Teachers) // Fill out arrays with data
 	db.Model(school).Association("Students").Find(&school.Students)
 	db.Model(school).Association("Subjects").Find(&school.Subjects)
 
-	for i, subj := range school.Subjects {
+	for i, subj := range school.Subjects { // For each subject find the assignments
 		db.Where("subject_id = ?", subj.ID).Find(&school.Subjects[i].Assignments)
 		for j, assignment := range school.Subjects[i].Assignments {
 			db.Model(assignment).Association("Requests").Find(&school.Subjects[i].Assignments[j].Requests)
@@ -162,7 +164,7 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 	}
 
-	for i, subject := range school.Subjects {
+	for i, subject := range school.Subjects { // For each subject get the teacher
 		usr := new(User)
 		err := db.Where("id = ?", subject.TeacherID).First(usr).Error
 		if err != nil {
@@ -171,6 +173,8 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		school.Subjects[i].Teacher = usr
 	}
 
+	// If the user isnt a headmaster, need to verify the user
+	// is a teacher or a student at this school
 	if !user.Has(Headmaster) {
 		found := false
 		for _, teacher := range school.Teachers {
@@ -196,13 +200,12 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 	}
 
-	if user.Has(Headmaster) {
-
-	} else if user.Has(Teacher) {
-		school.Teachers = make([]*User, 0)
+	// If the user is a teacher
+	if user.Has(Teacher) {
+		school.Teachers = make([]*User, 0) // remove info about
 		school.Students = make([]*User, 0)
 
-		subj := make([]*Subject, 0)
+		subj := make([]*Subject, 0) // Get all the subjects
 		for _, subject := range school.Subjects {
 			if subject.TeacherID == user.ID {
 				subj = append(subj, subject)
@@ -210,13 +213,13 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 
 		school.Subjects = subj
-	} else if user.Has(Student) {
-		school.Teachers = make([]*User, 0)
+	} else if user.Has(Student) { // If the user is a student
+		school.Teachers = make([]*User, 0) // Remove all info other than the assignments
 		school.Students = make([]*User, 0)
 		school.Subjects = make([]*Subject, 0)
 	}
 
-	resp.Data = school
+	resp.Data = school // respond
 
 	return 200, resp
 }
@@ -232,12 +235,12 @@ func (g *GetStudents) clean() {
 
 // Get gets the students from the school
 func (g *GetStudents) Get(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder
 
 	g.clean()
 
 	school := new(School)
-	err := db.Where("id = ?", g.ID).First(school).Error
+	err := db.Where("id = ?", g.ID).First(school).Error // Get school from database
 	if err != nil {
 		if util.IsNotFoundErr(err) {
 			resp.Data = nil
@@ -247,8 +250,9 @@ func (g *GetStudents) Get(db *gorm.DB) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	db.Model(school).Association("Students").Find(&school.Students)
-
+	db.Model(school).Association("Students").Find(&school.Students) // Find all students
+	// If no students were found GORM sets the array to NULL,
+	// which will crash the JSON generator
 	if len(school.Students) == 0 {
 		resp.Data = []*User{}
 	} else {

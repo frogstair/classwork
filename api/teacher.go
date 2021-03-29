@@ -23,7 +23,7 @@ func AddTeacher(c *gin.Context) {
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Headmaster) {
+	if !user.Has(m.Headmaster) { // Only a headmaster can add teachers
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
