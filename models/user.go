@@ -23,8 +23,8 @@ type User struct {
 
 // Has returns if a user has a role
 func (u *User) Has(r Role) bool {
-	role := u.Perms & r
-	return role == r
+	role := u.Perms & r // Perform AND logical operation
+	return role == r    // If the AND operation did not return 0, return true
 }
 
 // GetDashboard gets the users dashboard
@@ -106,9 +106,9 @@ func (u *User) GetDashboard(db *gorm.DB) (int, *util.Response) {
 
 // Delete deletes a user
 func (u *User) Delete(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	err := db.Delete(u).Error
+	err := db.Delete(u).Error // Delete user from database
 	if err != nil {
 		resp.Error = "internal error"
 		resp.Data = nil
@@ -116,18 +116,18 @@ func (u *User) Delete(db *gorm.DB) (int, *util.Response) {
 		return 500, resp
 	}
 
-	resp.Data = true
+	resp.Data = true // success
 	resp.Error = ""
 
-	return 202, resp
+	return 202, resp // Deleted
 }
 
 // Logout removes a token from a user
 func (u *User) Logout(db *gorm.DB) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	u.Token = ""
-	err := db.Save(u).Error
+	u.Token = ""            // Set user token to empty
+	err := db.Save(u).Error // Save
 	if err != nil {
 		resp.Error = "internal error"
 		resp.Data = nil
@@ -135,7 +135,7 @@ func (u *User) Logout(db *gorm.DB) (int, *util.Response) {
 		return 500, resp
 	}
 
-	resp.Data = true
+	resp.Data = true // Success
 	resp.Error = ""
 
 	return 202, resp
