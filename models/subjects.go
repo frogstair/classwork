@@ -54,17 +54,17 @@ func (n *NewSubject) validate() (bool, string) {
 
 // Add adds a subject to the database
 func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	n.clean()
+	n.clean() // Remove trailing whitespace
 
-	if valid, reason := n.validate(); !valid {
+	if valid, reason := n.validate(); !valid { // Valiate the input
 		resp.Data = nil
 		resp.Error = reason
 		return 400, resp
 	}
 
-	school := new(School)
+	school := new(School) // Get the school from database by ID provided
 	err := db.Where("id = ?", n.SchoolID).First(school).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -75,7 +75,23 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	subj := new(Subject)
+	db.Model(school).Association("Teachers").Find(&school.Teachers) // Get all teachers from the school
+
+	found := false // Check if the teacher is in the school
+	for _, t := range school.Teachers {
+		if u.ID == t.ID {
+			found = true
+			break
+		}
+	}
+
+	if !found { // If not in school
+		resp.Data = nil
+		resp.Error = "Teacher not in school"
+		return 403, resp
+	}
+
+	subj := new(Subject) // Create new subject
 	subj.ID = ksuid.New().String()
 	subj.TeacherID = u.ID
 	subj.Teacher = u
@@ -83,23 +99,23 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *util.Response) {
 	subj.NumStudents = 0
 	subj.SchoolID = n.SchoolID
 
-	err = db.Create(subj).Error
+	err = db.Create(subj).Error // Save it to the database
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	school.Subjects = append(school.Subjects, subj)
-	err = db.Save(school).Error
+	school.Subjects = append(school.Subjects, subj) // Add the subject to the school
+	err = db.Save(school).Error // Save the school
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
-	subjResponse := struct {
+	subjResponse := struct { // Create a response
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	}{subj.ID, subj.Name}
 
-	resp.Data = subjResponse
+	resp.Data = subjResponse // Respond to the user
 	resp.Error = ""
 	return 201, resp
 }
@@ -115,11 +131,11 @@ func (d *DeleteSubject) clean() {
 
 // Delete deletes a subject
 func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
 	d.clean()
 
-	subject := new(Subject)
+	subject := new(Subject) // Get subject from ID
 	err := db.Where("id = ?", d.ID).First(subject).Error
 	if err != nil {
 		if util.IsDuplicateErr(err) {
@@ -130,28 +146,30 @@ func (d *DeleteSubject) Delete(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	subject.Teacher = new(User)
+	subject.Teacher = new(User) // Get the subject teacher
 	db.Model(subject).Association("Teacher").Find(&subject.Teacher)
 
-	if subject.Teacher.ID != user.ID {
+	if subject.Teacher.ID != user.ID { // If the teacher doesnt own the subject
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
 	}
 
+	// Headmaster can also delete the subject, so get the headmaster from the school
 	school := new(School)
 	err = db.Where("id = ?", subject.SchoolID).First(school).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Check if the user is a headmaster but doesnt own the school
 	if school.UserID != user.ID && user.Has(Headmaster) {
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
 	}
 
-	db.Delete(subject)
+	db.Delete(subject) // Delete the subject from the database
 
 	resp.Data = true
 	resp.Error = ""
@@ -283,14 +301,13 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 // GetSubjectInfo is the internal model to retreive a subject's info
 type GetSubjectInfo struct {
 	ID  string
-	SID string
 }
 
 // Get gets info about the subject
 func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	subject := new(Subject)
+	subject := new(Subject) // Get the subject from the database
 	err := db.Where("id = ?", g.ID).First(subject).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -301,34 +318,44 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	if user.Has(Teacher) {
-		if subject.TeacherID != user.ID {
+	if user.Has(Teacher) { // If the user is a teacher
+		if subject.TeacherID != user.ID { // If the teacher doesnt own the subjet
 			resp.Data = nil
 			resp.Error = "forbidden"
 			return 403, resp
 		}
 
-		db.Model(subject).Association("Students").Find(&subject.Students)
+		db.Model(subject).Association("Students").Find(&subject.Students) // Get all the students for the subject
 
+		// Get ten latest assignments for the subject
 		db.Where("subject_id = ?", g.ID).Order("time_assigned desc").Limit(10).Find(&subject.Assignments)
 		for a, assignment := range subject.Assignments {
+			// For each assignment get the requests
 			db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+			// For each request
 			for _, req := range assignment.Requests {
+				// Get all student uploads
 				upl := make([]*RequestUpload, 0)
 				req.Uploads = upl
 				db.Model(req).Association("Uploads").Find(&req.Uploads)
 				req.Complete = nil
 			}
-
+			
+			// Get the list of students that completed it
 			db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
 
+			// If the assignment has a due time
 			if assignment.TimeDue != nil {
+				// Get list of completed users
 				completed := make(map[string]bool)
+				// For each user that completed the assignment make a record of that
 				for _, compl := range assignment.CompletedBy {
 					completed[compl.ID] = true
 				}
 
+				// make an array of users that didnt complete it
 				assignment.NotCompletedBy = make([]*User, 0)
+				// Fill out the list of students that didnt complete it
 				for _, student := range subject.Students {
 					if _, ok := completed[student.ID]; !ok {
 						assignment.NotCompletedBy = append(assignment.NotCompletedBy, student)
@@ -339,14 +366,18 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 			subject.Assignments[a] = assignment
 		}
 
+		// Get all students from the subject
 		getStudents := new(GetStudents)
 		getStudents.ID = g.SID
 		code, students := getStudents.Get(db)
 
+		// If an error occured while getting the user,
+		// respond with its error code instead
 		if code != 200 {
 			return code, students
 		}
 
+		// Respond
 		response := struct {
 			S  *Subject `json:"subject"`
 			St []*User  `json:"students"`
@@ -358,9 +389,7 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 		resp.Data = response
 		resp.Error = ""
 
-	} else if user.Has(Student) {
-
-	} else {
+	} else { // If the user isnt a teacher then forbid access
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
