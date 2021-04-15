@@ -105,7 +105,7 @@ func (n *NewSubject) Add(db *gorm.DB, u *User) (int, *util.Response) {
 	}
 
 	school.Subjects = append(school.Subjects, subj) // Add the subject to the school
-	err = db.Save(school).Error // Save the school
+	err = db.Save(school).Error                     // Save the school
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
@@ -190,7 +190,7 @@ func (n *NewSubjectStudent) clean() {
 // Add adds a new student to a subject
 func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 	resp := new(util.Response) // Response placeholder
-	n.clean() // Remove trailing whitespace
+	n.clean()                  // Remove trailing whitespace
 
 	usr := new(User) // Get student that needs to be added
 	err := db.Where("id = ?", n.ID).First(usr).Error
@@ -213,7 +213,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 		return util.DatabaseError(err, resp)
 	}
-	
+
 	// If the teacher doesn't own the subject then restrict access
 	if subject.TeacherID != user.ID {
 		resp.Data = nil
@@ -310,6 +310,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 // GetSubjectInfo is the internal model to retreive a subject's info
 type GetSubjectInfo struct {
 	ID  string
+	SID string
 }
 
 // Get gets info about the subject
@@ -349,7 +350,7 @@ func (g *GetSubjectInfo) Get(db *gorm.DB, user *User) (int, *util.Response) {
 				db.Model(req).Association("Uploads").Find(&req.Uploads)
 				req.Complete = nil
 			}
-			
+
 			// Get the list of students that completed it
 			db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
 

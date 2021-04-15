@@ -52,9 +52,9 @@ type RequestUpload struct {
 
 // NewAssignment is a model to create a new assignment
 type NewAssignment struct {
-	Name           string     `json:"name"`
-	Text           string     `json:"text"`
-	SubjectID      string     `json:"subject_id"`
+	Name      string `json:"name"`
+	Text      string `json:"text"`
+	SubjectID string `json:"subject_id"`
 	// TimeDue field is a pointer because it is optional
 	// if the pointer is nil, we can ignore it and say
 	// there is no time due for the request
@@ -92,7 +92,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		return 400, resp
 	}
 
-	// Check if the time due is in the past, and return an error 
+	// Check if the time due is in the past, and return an error
 	if n.UploadRequest && (n.TimeDue == nil || n.TimeDue.Before(time.Now())) {
 		resp.Data = nil
 		resp.Error = "Cannot set time due in the past"
@@ -216,11 +216,11 @@ func (n *NewRequestComplete) clean() {
 
 // Complete completes the upload request
 func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 
-	n.clean()
+	n.clean() // Remove trailing whitespace
 
-	request := new(Request)
+	request := new(Request) // Get the request to complete from the database
 	err := db.Where("id = ?", n.RequestID).First(request).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -231,21 +231,24 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		return util.DatabaseError(err, resp)
 	}
 
-	assgn := new(Assignment)
+	assgn := new(Assignment) // Get the assignment from which the request is
 	err = db.Where("id = ?", request.AssignmentID).First(assgn).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Fill in all the requests
 	db.Model(assgn).Association("Requests").Find(&assgn.Requests)
 
-	subj := new(Subject)
+	subj := new(Subject) // Get the subject from which the assignment is
 	err = db.Where("id = ?", assgn.SubjectID).First(subj).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Get all the students from the subject
 	db.Model(subj).Association("Students").Find(&subj.Students)
+	// Check if the student takes the subject
 	found := false
 	for _, student := range subj.Students {
 		if student.ID == user.ID {
@@ -259,6 +262,7 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		return 403, resp
 	}
 
+	// Get all the uplopads from the request to check if a file was already uploaded
 	db.Model(request).Association("Uploads").Find(&request.Uploads)
 	for _, upl := range request.Uploads {
 		if upl.UserID == user.ID {
@@ -268,23 +272,28 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		}
 	}
 
+	// Check if the file that the user uploaded exists
 	if _, err := os.Stat(util.ToGlobalPath(n.Filename)); os.IsNotExist(err) {
 		resp.Data = nil
-		resp.Error = "Internal error"
-		return 500, resp
+		resp.Error = "file doesnt exist"
+		return 400, resp
 	}
 
+	// If all checks passed
+	// Create a request upload
 	reqUpl := new(RequestUpload)
 	reqUpl.Filepath = util.ToGlobalPath(n.Filename)
 	reqUpl.Filename = n.Filename
 	reqUpl.RequestID = request.ID
 	reqUpl.UserID = user.ID
 
+	// Save into database
 	err = db.Create(reqUpl).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Check if the student has any remaining requests unfilled
 	completed := true
 	db.Model(assgn).Association("Requests").Find(&assgn.Requests)
 	db.Model(assgn).Association("CompletedBy").Find(&assgn.CompletedBy)
@@ -303,7 +312,11 @@ func (n *NewRequestComplete) Complete(db *gorm.DB, user *User) (int, *util.Respo
 		}
 	}
 
+	// if all the requests were completed
 	if completed {
+		// Here I use a raw database query because
+		// I need to create an association with existing data
+		// which GORM doesnt yet support
 		err = db.Exec("insert into assignments_completed(assignment_id, user_id) values (?, ?);", assgn.ID, user.ID).Error
 		if err != nil {
 			return util.DatabaseError(err, resp)

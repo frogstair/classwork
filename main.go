@@ -97,11 +97,11 @@ func run(wg *sync.WaitGroup) {
 	assgnGroup.GET("/", m.ValidateJWT, api.GetAssignment)
 	assgnGroup.POST("/complete", m.ValidateJWT, api.CompleteAssignment)
 
+	// Garbage collection
 	g.Use(garbage.AddCollectorToContext)
 	go garbage.Run()
 
 	g.Static("/files", "./files")
-
 	fsgroup := g.Group("/files")
 	fsgroup.POST("/", api.CreateFile)
 

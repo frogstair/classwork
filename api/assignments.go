@@ -40,24 +40,24 @@ func NewAssignment(c *gin.Context) {
 
 // CompleteAssignment completes an assignment
 func CompleteAssignment(c *gin.Context) {
-	db, ok := c.Keys["db"].(*gorm.DB)
+	db, ok := c.Keys["db"].(*gorm.DB) // Database variable from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no database variable in context")
 	}
 
-	user, ok := c.Keys["usr"].(*m.User)
+	user, ok := c.Keys["usr"].(*m.User) // Get user from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Student) {
+	if !user.Has(m.Student) { // Only students can complete their assignments
 		c.JSON(403, gin.H{"error": "insufficient permissions"})
 		return
 	}
 
-	newComplete := new(m.NewRequestComplete)
+	newComplete := new(m.NewRequestComplete) // Create a model and run the method
 	err := json.NewDecoder(c.Request.Body).Decode(newComplete)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
