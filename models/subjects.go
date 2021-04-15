@@ -189,10 +189,10 @@ func (n *NewSubjectStudent) clean() {
 
 // Add adds a new student to a subject
 func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
-	n.clean()
+	resp := new(util.Response) // Response placeholder
+	n.clean() // Remove trailing whitespace
 
-	usr := new(User)
+	usr := new(User) // Get student that needs to be added
 	err := db.Where("id = ?", n.ID).First(usr).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -203,7 +203,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
-	subject := new(Subject)
+	subject := new(Subject) // Get the subject to which to add the student
 	err = db.Where("id = ?", n.Subject).First(subject).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -213,32 +213,36 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 		return util.DatabaseError(err, resp)
 	}
+	
+	// If the teacher doesn't own the subject then restrict access
+	if subject.TeacherID != user.ID {
+		resp.Data = nil
+		resp.Error = "forbidden"
+		return 403, resp
+	}
 
-	school := new(School)
+	school := new(School) // Get the school in which the subject is
 	err = db.Where("id = ?", subject.SchoolID).First(school).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Get a list of all students in the school
 	err = db.Model(school).Association("Students").Find(&school.Students).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Get a list of all students in a subject
 	err = db.Model(subject).Association("Students").Find(&subject.Students).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Get all subjects the user is taking
 	err = db.Model(user).Association("Subjects").Find(&user.Subjects).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
-	}
-
-	if subject.TeacherID != user.ID {
-		resp.Data = nil
-		resp.Error = "forbidden"
-		return 403, resp
 	}
 
 	if !usr.Has(Student) {
@@ -247,6 +251,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		return 400, resp
 	}
 
+	// Check if the student is in the school
 	found := false
 	for _, student := range school.Students {
 		if student.ID == usr.ID {
@@ -260,6 +265,7 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		return 400, resp
 	}
 
+	// Check if the student is already added to the subject
 	found = false
 	for _, student := range subject.Students {
 		if student.ID == usr.ID {
@@ -273,19 +279,22 @@ func (n *NewSubjectStudent) Add(db *gorm.DB, user *User) (int, *util.Response) {
 		return 409, resp
 	}
 
+	// Add the student to the subjects list
 	subject.Students = append(subject.Students, usr)
 	subject.NumStudents++
-	err = db.Save(subject).Error
+	err = db.Save(subject).Error // Save the subjecrt
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Add the subject to the user
 	usr.Subjects = append(usr.Subjects, subject)
 	err = db.Save(user).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Create a response
 	studentResponse := struct {
 		ID        string `json:"id"`
 		FirstName string `json:"first_name"`

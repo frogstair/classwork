@@ -55,6 +55,9 @@ type NewAssignment struct {
 	Name           string     `json:"name"`
 	Text           string     `json:"text"`
 	SubjectID      string     `json:"subject_id"`
+	// TimeDue field is a pointer because it is optional
+	// if the pointer is nil, we can ignore it and say
+	// there is no time due for the request
 	TimeDue        *time.Time `json:"time_due"`
 	Files          []string   `json:"files"`
 	UploadRequest  bool       `json:"-"`
@@ -80,7 +83,7 @@ func (n *NewAssignment) validate() (bool, string) {
 
 // Create creates a new assignment
 func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Placeholder response
 	n.clean()
 
 	if valid, reason := n.validate(); !valid {
@@ -89,12 +92,14 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		return 400, resp
 	}
 
+	// Check if the time due is in the past, and return an error 
 	if n.UploadRequest && (n.TimeDue == nil || n.TimeDue.Before(time.Now())) {
 		resp.Data = nil
 		resp.Error = "Cannot set time due in the past"
 		return 400, resp
 	}
 
+	// Get the subject by ID to which the assignment is added
 	subject := new(Subject)
 	err := db.Where("id = ?", n.SubjectID).Find(subject).Error
 	if err != nil {
@@ -106,30 +111,40 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Check if the user owns the subject
 	if subject.TeacherID != user.ID {
 		resp.Data = nil
 		resp.Error = "forbidden"
 		return 403, resp
 	}
 
-	names := make([]string, len(n.Files))
+	// Generate filenames for the assignments
 
+	// Create an empty array
+	names := make([]string, len(n.Files))
 	for i, file := range n.Files {
+		// Get the file on disk
 		file = util.ToGlobalPath(file)
+		// If it doesnt exist then throw an error
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			resp.Data = nil
 			resp.Error = "Internal error"
 			return 500, resp
 		}
 
+		// Split the filename and extension
 		name, ext := util.SplitName(file)
+		// Set file as verified
 		name = name[:len(name)-2] + "_1"
+		// Rename the file to validate it
 		os.Rename(file, name+ext)
+		// Place the name in the array
 		names[i] = name + ext
 	}
 
 	now := time.Now()
 
+	// Set all the fields in the assignment
 	assignment := new(Assignment)
 	assignment.ID = ksuid.New().String()
 	assignment.Name = n.Name
@@ -139,13 +154,16 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 	assignment.TimeDue = n.TimeDue
 	assignment.TimeAssigned = &now
 
+	// Save the assignment in the database
 	err = db.Save(assignment).Error
 	if err != nil {
 		return util.DatabaseError(err, resp)
 	}
 
+	// Create all the necessary upload requests
 	requests := make([]*Request, len(n.UploadRequests))
 
+	// Generate all the necessary info for all the requests
 	for i, uploadReq := range n.UploadRequests {
 		request := new(Request)
 		request.ID = ksuid.New().String()
@@ -156,6 +174,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		db.Save(request)
 	}
 
+	// Create all links to the files that are attached to the assignment
 	files := make([]*AssignmentFile, len(names))
 	for i, name := range names {
 		file := new(AssignmentFile)
@@ -167,6 +186,7 @@ func (n *NewAssignment) Create(db *gorm.DB, user *User) (int, *util.Response) {
 		db.Save(file)
 	}
 
+	// Make a response
 	assgn := struct {
 		ID         string            `json:"id"`
 		Name       string            `json:"name"`
@@ -303,9 +323,9 @@ type GetAssignment struct {
 
 // Get gets the assignment information
 func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
-	resp := new(util.Response)
+	resp := new(util.Response) // Response placeholder
 
-	assignment := new(Assignment)
+	assignment := new(Assignment) // Get the assignment by ID
 	err := db.Where("id = ?", g.ID).First(assignment).Error
 	if err != nil {
 		if util.IsNotFoundErr(err) {
@@ -315,8 +335,9 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 		return util.DatabaseError(err, resp)
 	}
-	db.Model(assignment).Association("Files").Find(&assignment.Files)
+	db.Model(assignment).Association("Files").Find(&assignment.Files) // Get all the files for the assignment
 
+	// Get the subject the assignment is in
 	subject := new(Subject)
 	err = db.Where("id = ?", assignment.SubjectID).First(subject).Error
 	if err != nil {
@@ -327,9 +348,13 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 		return util.DatabaseError(err, resp)
 	}
+	// Get all students from the subject
 	db.Model(subject).Association("Students").Find(&subject.Students)
 
+	// If the user is a teacher then
 	if user.Has(Teacher) {
+		// Get all the requests, for each request get the requests,
+		// and for each request get all the files that students uploaded
 		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
 		for _, req := range assignment.Requests {
 			upl := make([]*RequestUpload, 0)
@@ -347,10 +372,12 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 
 			req.Uploads = uplBuf
 		}
-
+		// Get who has completed each assignment
 		db.Model(assignment).Association("CompletedBy").Find(&assignment.CompletedBy)
 
+		// If the assignment has a time due
 		if assignment.TimeDue != nil {
+			// Check who completed the assignment and who didnt
 			completed := make(map[string]bool)
 			for _, compl := range assignment.CompletedBy {
 				completed[compl.ID] = true
@@ -364,7 +391,9 @@ func (g *GetAssignment) Get(db *gorm.DB, user *User) (int, *util.Response) {
 			}
 		}
 	} else {
+		// Get all the requests for a student
 		db.Model(assignment).Association("Requests").Find(&assignment.Requests)
+		// For each request get what needs to be uploaded
 		for r, req := range assignment.Requests {
 			db.Model(req).Association("Uploads").Find(&assignment.Requests[r].Uploads)
 			found := false

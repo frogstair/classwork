@@ -87,30 +87,30 @@ func GetSubject(c *gin.Context) {
 
 // AddStudentSubject adds a new student to a subject
 func AddStudentSubject(c *gin.Context) {
-	db, ok := c.Keys["db"].(*gorm.DB)
+	db, ok := c.Keys["db"].(*gorm.DB) // Get database from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no database variable in context")
 	}
 
-	user, ok := c.Keys["usr"].(*m.User)
+	user, ok := c.Keys["usr"].(*m.User) // Get user from context
 	if !ok {
 		c.JSON(500, gin.H{"error": "internal error"})
 		panic("no user variable in context")
 	}
 
-	if !user.Has(m.Teacher) && !user.Has(m.Headmaster) {
+	if !user.Has(m.Teacher) && !user.Has(m.Headmaster) { // Students cant add others to a subject
 		c.JSON(403, gin.H{"error": "fobidden"})
 		return
 	}
 
-	newStudentSubject := new(m.NewSubjectStudent)
+	newStudentSubject := new(m.NewSubjectStudent) // Create model
 	err := json.NewDecoder(c.Request.Body).Decode(newStudentSubject)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid data"})
 		return
 	}
 
-	code, resp := newStudentSubject.Add(db, user)
+	code, resp := newStudentSubject.Add(db, user) // Add the student
 	c.JSON(code, resp)
 }
