@@ -8,18 +8,21 @@ import (
 
 // SplitName splits the filename info extension and name
 func SplitName(filename string) (string, string) {
-	ext := filepath.Ext(filename)
-	name := strings.TrimSuffix(filename, ext)
-	return name, ext
+	ext := filepath.Ext(filename) // Get the extension of the file
+	name := strings.TrimSuffix(filename, ext) // Remoe the extension from the original name
+	return name, ext // Return both name and extension
 }
 
 // GenerateName generates a random name for a file
 func GenerateName() string {
-	r := make([]byte, 30)
+	r := make([]byte, 30) // Make a 30 lette array
+	// The list of the letters to pick from
 	c := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	// For each letter pick a random one from the list
 	for i := range r {
 		r[i] = c[rand.Intn(len(c))]
 	}
+	// Return as a string
 	return string(r)
 }
 

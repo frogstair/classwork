@@ -10,8 +10,8 @@ import (
 
 // IsDuplicateErr checks if the error generated comes from inserting a duplicate record
 func IsDuplicateErr(err error) bool {
-	pqerr, ok := err.(*pq.Error)
-	return ok && pqerr.Code.Name() == "unique_violation"
+	pqerr, ok := err.(*pq.Error) // Get the PostgreSQL error code
+	return ok && pqerr.Code.Name() == "unique_violation" // Return true if the 
 }
 
 // IsNotFoundErr checks if the returned error signifies a missing record
@@ -27,8 +27,8 @@ type Response struct {
 
 // DatabaseError notifies of a database error
 func DatabaseError(err error, resp *Response) (int, *Response) {
-	resp.Data = nil
-	resp.Error = "Internal error"
+	resp.Data = nil // Set the resonse data to null which will make it missing from the response JSON
+	resp.Error = "Internal error" // Set the error
 	log.Printf("Database error: %s\n", err.Error())
-	return 500, resp
+	return 500, resp // Return a 500 error
 }

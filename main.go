@@ -110,7 +110,7 @@ func run(wg *sync.WaitGroup) {
 
 	// Print a log
 	log.Printf("Running on %s:%s\n", address, port)
-
+	
 	// Run the server
 	g.Run(address + ":" + port)
 }
