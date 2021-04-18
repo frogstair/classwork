@@ -1,14 +1,18 @@
-var assgn_id = window.localStorage.getItem("_asn");
+var assgn_id = window.localStorage.getItem("_asn"); // Get all the global variables
 var assignment;
 var selected = 0;
 
 $(() => {
+  // Get the role of the person
   var role = window.localStorage.getItem("_rol");
+  // If the role is not a teacher
   if (role != "nqrOzz0jmxA=") {
+    // Remove the script from the page and let the other script run instead
     $("#t").remove();
     return;
   }
 
+  // Show a waiter
   $("#waiter").show();
   $("#content").hide();
 
@@ -18,6 +22,7 @@ $(() => {
     id: assgn_id,
   };
 
+  // Get all the info for the assignment
   axios
     .get("/api/school/subject/assignment", {
       params: params,
@@ -36,18 +41,24 @@ $(() => {
 });
 
 function loadWorkspace() {
+  // Set the name of the assignment and the text
   $("#name").text(assignment.name);
   $("#text").text(assignment.text);
 
+  // Parse when it was assigned and when its due
   const time_assigned = moment(assignment.time_assigned).format("lll");
   const time_due = moment(assignment.time_due).format("lll");
 
+  // Add the text to the page
   $("#assigned").text("Assigned " + time_assigned);
   $("#due").text("Due " + time_due);
 
+  // If the assignment has any files attached show that they can be downloaded
   if (assignment.files) {
     $("#files").append("<hr/><h4>Files</h4>")
     assignment.files.forEach((file, index) => {
+      // Set the name of the download to
+      // assignment_name_filename
       $("#files").append(`
       <a
         style="max-width: 18em"
@@ -59,6 +70,7 @@ function loadWorkspace() {
     })
   }
 
+  // If there are any requests show them too
   if (assignment.requests) {
     var index = -1;
     assignment.requests.forEach((request) => {
@@ -86,15 +98,19 @@ function loadWorkspace() {
 }
 
 function updateSelection() {
+  // Delete everything from the screen
   $("#uploads").empty();
 
+  // Get the selected request
   var request = assignment.requests[selected];
   if (request.uploads) {
+    // For each upload get the file to download
     request.uploads.forEach((upload) => {
       var downloadFile = `${
         upload.user.first_name + "_" + upload.user.last_name + "_" + upload.name
       }`;
 
+      // template for each upload
       $("#uploads").append(
         $(`<div class="card">
       <div class="card-body">
@@ -120,6 +136,7 @@ function updateSelection() {
       );
     });
   } else {
+    // If nobody uploaded say "no submissions"
     $("#uploads").append(
       $(`<div class="card">
     <div class="card-body">
@@ -136,6 +153,7 @@ function updateSelection() {
   $("#req-name").text(request.name);
 }
 
+// Select each request
 function select(id) {
   selected = id;
   updateSelection();

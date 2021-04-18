@@ -200,6 +200,11 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		}
 	}
 
+	if user.Has(Headmaster) {
+		resp.Data = school // respond
+		return 200, resp
+	}
+
 	// If the user is a teacher
 	if user.Has(Teacher) {
 		school.Teachers = make([]*User, 0) // remove info about
@@ -218,9 +223,7 @@ func (g *GetSchoolInfo) GetInfo(db *gorm.DB, user *User) (int, *util.Response) {
 		school.Students = make([]*User, 0)
 		school.Subjects = make([]*Subject, 0)
 	}
-
 	resp.Data = school // respond
-
 	return 200, resp
 }
 

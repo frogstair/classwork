@@ -1,3 +1,4 @@
+// Template for a subject
 function subjTemplate(subjid, subjname) {
   return `<div id="${subjid}">
     <h3 class="mt-3">${subjname}</h3>
@@ -5,6 +6,7 @@ function subjTemplate(subjid, subjname) {
   </div>`;
 }
 
+// Template for an assignment
 function assgnTemplate(id, name, text, subjid, remaining) {
   return `<div class="card mb-3">
     <div class="card-body">
@@ -19,9 +21,13 @@ function assgnTemplate(id, name, text, subjid, remaining) {
   </div>`;
 }
 
+// View assignment
 function viewAssgn(id, sid) {
+  // Set all appropritate fields for future reference
   window.localStorage.setItem("_sub", sid);
   window.localStorage.setItem("_asn", id);
+  // Indicate that a student is viewing the assignment
   window.localStorage.setItem("_rol", "cNFDBScBBJ8=");
+  // Redirect
   window.location.href = "/assignment";
 }

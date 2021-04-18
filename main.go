@@ -48,8 +48,9 @@ func run(wg *sync.WaitGroup) {
 	// Create routes to serve all the html pages
 	// Could have made a smarter system than that
 	// but it created router conflict
-	g.GET("/register", pages.ServeRegister)
+	g.GET("/", pages.ServeLogin)
 	g.GET("/login", pages.ServeLogin)
+	g.GET("/register", pages.ServeRegister)
 	g.GET("/login/pass", pages.ServeLoginPassword)
 	g.GET("/dashboard", pages.ServeDashboard)
 	g.GET("/school", pages.ServeSchool)
@@ -110,7 +111,7 @@ func run(wg *sync.WaitGroup) {
 
 	// Print a log
 	log.Printf("Running on %s:%s\n", address, port)
-	
+
 	// Run the server
 	g.Run(address + ":" + port)
 }
