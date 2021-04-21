@@ -2,7 +2,6 @@ package tests
 
 import (
 	"classwork/database"
-	"classwork/models"
 	m "classwork/models"
 	"log"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Load in the environment
 func init() {
 	err := godotenv.Load()
 	if err != nil {
@@ -19,14 +19,17 @@ func init() {
 }
 
 func TestLogin(t *testing.T) {
+	// Get the database and disconnect when done
 	db := database.GetPostgres()
 	defer database.Disconnect()
 
+	// The testing struct
 	type login struct {
 		email    string
 		password string
 	}
 
+	// User must be registered before logging in
 	type register struct {
 		email string
 		fname string
@@ -34,6 +37,7 @@ func TestLogin(t *testing.T) {
 		passw string
 	}
 
+	// List of test cases
 	testcases := []struct {
 		login    login
 		register register
@@ -81,6 +85,9 @@ func TestLogin(t *testing.T) {
 	}
 
 	for i, c := range testcases {
+
+		// Register the user
+		// 100% guaranteed success
 		regUser := m.RegisterUser{
 			FirstName: c.register.fname,
 			LastName:  c.register.lname,
@@ -91,16 +98,18 @@ func TestLogin(t *testing.T) {
 		mp := structs.Map(resp)
 		id := mp["Data"].(map[string]interface{})["ID"]
 
-		user := new(models.User)
+		// Get the user
+		user := new(m.User)
 		db.Where("id = ?", id).First(user)
 		defer db.Delete(user)
 
+		// Login the user
 		logUser := m.LoginUser{
 			Email:    c.login.email,
 			Password: c.login.password,
 		}
-
 		code, resp, tok := logUser.Login(db)
+		// Check if test was supposed to be passed
 		if code != 200 {
 			if c.passes {
 				t.Fatalf("Test case %d: error %s", i, resp.Error)
@@ -111,10 +120,12 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Test case %d: error %s", i, "test succeeded when shouldnt have")
 		}
 
+		// Parse the token the user got along with the claims
 		_, resp = m.ParseToken(tok, db)
 		mp = structs.Map(resp)
 		logid := mp["Data"].(map[string]interface{})["ID"]
 
+		// Check the ID to see if it matches
 		if logid != id && c.passes {
 			t.Fatalf("Test case %d: error %s", i, "user id not present in token")
 		}

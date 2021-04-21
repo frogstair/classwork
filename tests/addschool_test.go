@@ -28,9 +28,10 @@ func TestAddSchool(t *testing.T) {
 	defer database.Disconnect()
 
 	user := new(m.User)
-	const id = "1oIpNHE7WOEmdlCGuIsYu4R7LGo" // <- REPLACE ID
+	const id = "1oIpNHE7WOEmdlCGuIsYu4R7LGo" // <- REPLACE ID WITH ID OF HEADMASTER
 	db.Where("id = ?", id).First(user)
 
+	// Test cases
 	tests := []struct {
 		school m.NewSchool
 		passes bool
@@ -49,8 +50,11 @@ func TestAddSchool(t *testing.T) {
 		},
 	}
 
+	// Create each school and then delete them
 	for i, c := range tests {
+		// Add the school
 		code, resp := c.school.Add(db, user)
+		// Check if the test passed
 		if code != 201 {
 			if c.passes {
 				t.Fatalf("Test case %d: error %s", i, resp.Error)
@@ -61,9 +65,11 @@ func TestAddSchool(t *testing.T) {
 			t.Fatalf("Test case %d: error %s", i, "test succeeded when shouldnt have")
 		}
 
+		// Get the results
 		mp := structs.Map(resp)
 		id := mp["Data"].(map[string]interface{})["ID"]
 
+		// Check if the school exists
 		school := new(m.School)
 		err := db.Where("id = ?", id).First(school).Error
 		if err != nil {
@@ -72,8 +78,10 @@ func TestAddSchool(t *testing.T) {
 			}
 			t.Fatalf("Test case %d: error %s", i, err.Error())
 		}
+		// Delete the school
 		defer db.Delete(school)
 
+		// Check if the name matches
 		if school.Name != c.school.Name {
 			t.Fatalf("Test case %d: error %s", i, "name doesnt match")
 		}
